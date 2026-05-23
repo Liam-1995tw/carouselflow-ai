@@ -1,0 +1,1854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CarouselFlow AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700;1,900&family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & Tokens ─────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#FFFFFF; --fg:#000000;
+  --muted:#F5F5F5; --muted-fg:#525252;
+  --border:#000000; --border-light:#E5E5E5;
+  --font-display:"Playfair Display",Georgia,serif;
+  --font-mono:"JetBrains Mono",monospace;
+  --font-body:"Inter",system-ui,sans-serif;
+}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);height:100vh;overflow:hidden}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border-light)}
+
+/* ════════════════════════════════════════════════════════════════ */
+/* ONBOARDING VIEW                                                  */
+/* ════════════════════════════════════════════════════════════════ */
+#view-onboard{
+  height:100vh;display:flex;flex-direction:column;overflow-y:auto;
+  background:var(--bg);
+  background-image:repeating-linear-gradient(0deg,transparent,transparent 1px,#00000008 1px,#00000008 2px);
+  background-size:100% 4px;
+}
+
+/* Onboard header */
+.ob-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 56px;height:60px;border-bottom:4px solid var(--fg);
+  background:var(--bg);flex-shrink:0;
+}
+.ob-logo{font-family:var(--font-display);font-size:17px;font-weight:700;font-style:italic;letter-spacing:-.03em}
+.ob-sponsors{display:flex;align-items:center;gap:0}
+.ob-sp{
+  font-family:var(--font-mono);font-size:9px;font-weight:400;
+  color:var(--muted-fg);text-transform:uppercase;letter-spacing:.1em;
+  padding:0 16px;border-left:1px solid var(--border-light);
+}
+.ob-sp:first-child{border-left:none;padding-left:0}
+
+/* Onboard body */
+.ob-body{flex:1;max-width:1200px;width:100%;margin:0 auto;padding:0 56px}
+
+/* Hero */
+.ob-hero{padding:52px 0 44px;border-bottom:4px solid var(--fg)}
+.ob-eyebrow{
+  font-family:var(--font-mono);font-size:10px;font-weight:400;
+  text-transform:uppercase;letter-spacing:.14em;color:var(--muted-fg);margin-bottom:18px;
+  display:flex;align-items:center;gap:12px;
+}
+.ob-eyebrow::before{content:'';display:block;width:28px;height:2px;background:var(--fg)}
+.ob-h1{
+  font-family:var(--font-display);font-size:clamp(3.5rem,7vw,6.5rem);
+  font-weight:900;line-height:.96;letter-spacing:-.04em;
+}
+.ob-h1 em{font-style:italic;font-weight:400}
+.ob-hero-meta{
+  font-family:var(--font-mono);font-size:10px;color:var(--muted-fg);
+  text-transform:uppercase;letter-spacing:.1em;margin-top:28px;
+}
+
+/* Cards */
+.ob-cards-section{padding:36px 0;border-bottom:4px solid var(--fg)}
+.ob-section-label{
+  font-family:var(--font-mono);font-size:9px;font-weight:500;
+  text-transform:uppercase;letter-spacing:.14em;color:var(--muted-fg);margin-bottom:16px;
+}
+.ob-cards{display:grid;grid-template-columns:1fr 1fr 1fr;border:1px solid var(--border)}
+.ob-card{
+  border-right:1px solid var(--border);padding:22px;
+  display:flex;flex-direction:column;min-height:260px;
+  background:var(--bg);transition:background .1s;
+}
+.ob-card:last-child{border-right:none}
+.ob-card:hover{background:var(--muted)}
+.ob-card-num{
+  font-family:var(--font-mono);font-size:9px;font-weight:400;
+  color:var(--muted-fg);letter-spacing:.1em;margin-bottom:10px;
+}
+.ob-card-title{
+  font-family:var(--font-display);font-size:21px;font-weight:700;
+  line-height:1.1;letter-spacing:-.02em;margin-bottom:8px;
+}
+.ob-card-desc{font-size:11px;color:var(--muted-fg);line-height:1.65;margin-bottom:16px}
+.ob-card-body{flex:1;display:flex;flex-direction:column}
+
+/* Drop zones */
+.ob-dropzone{
+  flex:1;border:1px dashed var(--border-light);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:7px;padding:18px;cursor:pointer;transition:all .1s;text-align:center;min-height:90px;
+}
+.ob-dropzone:hover,.ob-dropzone.drag-over{border-color:var(--border);background:rgba(0,0,0,.02)}
+.ob-dropzone.has-file{border:1px solid var(--border);border-style:solid}
+.ob-dz-icon{font-size:16px;opacity:.4}
+.ob-dz-text{
+  font-family:var(--font-mono);font-size:9px;text-transform:uppercase;
+  letter-spacing:.1em;color:var(--muted-fg);
+}
+.ob-optional{
+  font-family:var(--font-mono);font-size:8px;text-transform:uppercase;
+  letter-spacing:.12em;color:var(--muted-fg);padding:3px 7px;
+  border:1px solid var(--border-light);display:inline-block;margin-top:8px;align-self:flex-start;
+}
+/* Ref preview */
+.ob-ref-preview{display:none;align-items:center;gap:8px;padding:7px;border:1px solid var(--border);margin-top:8px}
+.ob-ref-preview.show{display:flex}
+.ob-ref-thumb{width:36px;height:36px;object-fit:cover;border:1px solid var(--border-light)}
+.ob-ref-name{font-family:var(--font-mono);font-size:9px;color:var(--muted-fg);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-transform:uppercase;letter-spacing:.05em}
+.ob-ref-clear{background:none;border:none;font-size:14px;cursor:pointer;color:var(--muted-fg);padding:0 3px}
+.ob-ref-clear:hover{color:var(--fg)}
+
+/* Project list in onboard card */
+.ob-proj-list{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+.ob-proj-item{
+  padding:9px 0;border-bottom:1px solid var(--border-light);
+  display:flex;align-items:flex-start;gap:8px;
+}
+.ob-proj-item:last-child{border-bottom:none}
+.ob-proj-info{flex:1;min-width:0}
+.ob-proj-title{font-size:11px;font-weight:600;color:var(--fg);margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ob-proj-meta{font-family:var(--font-mono);font-size:8px;color:var(--muted-fg);text-transform:uppercase;letter-spacing:.05em}
+.ob-proj-load{
+  font-family:var(--font-mono);font-size:8px;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--fg);padding:3px 8px;border:1px solid var(--fg);background:transparent;
+  cursor:pointer;flex-shrink:0;transition:all .1s;
+}
+.ob-proj-load:hover{background:var(--fg);color:var(--bg)}
+.ob-proj-empty{
+  font-family:var(--font-mono);font-size:9px;color:var(--muted-fg);
+  text-transform:uppercase;letter-spacing:.08em;padding:16px 0;text-align:center;
+  flex:1;display:flex;align-items:center;justify-content:center;
+  border:1px dashed var(--border-light);
+}
+
+/* Topic suggestion dropdown */
+.topic-suggest-wrap{position:relative}
+.topic-dropdown{
+  position:absolute;left:0;right:0;top:calc(100% + 2px);
+  background:var(--bg);border:1px solid var(--fg);
+  z-index:300;display:none;
+}
+.topic-dropdown.show{display:block}
+.topic-suggest-item{
+  padding:10px 14px;cursor:pointer;
+  border-bottom:1px solid var(--border-light);transition:background .1s;
+}
+.topic-suggest-item:last-child{border-bottom:none}
+.topic-suggest-item:hover{background:var(--muted)}
+.topic-suggest-angle{
+  font-family:var(--font-mono);font-size:7px;text-transform:uppercase;
+  letter-spacing:.12em;color:var(--muted-fg);margin-bottom:3px;
+}
+.topic-suggest-text{
+  font-family:var(--font-display);font-style:italic;font-size:14px;color:var(--fg);line-height:1.3;
+}
+
+/* Generate section */
+.ob-gen-section{padding:36px 0 52px}
+.ob-field{margin-bottom:26px}
+.ob-field-label{
+  font-family:var(--font-mono);font-size:9px;font-weight:500;
+  text-transform:uppercase;letter-spacing:.14em;color:var(--muted-fg);
+  display:block;margin-bottom:10px;
+}
+.ob-topic-input{
+  width:100%;background:transparent;border:none;border-bottom:2px solid var(--fg);
+  padding:10px 0;font-size:22px;font-family:var(--font-display);font-style:italic;
+  color:var(--fg);outline:none;transition:border-width .1s;
+}
+.ob-topic-input:focus{border-bottom-width:4px}
+.ob-topic-input::placeholder{color:var(--muted-fg)}
+
+/* Onboard theme grid */
+.ob-theme-grid{
+  display:grid;grid-template-columns:repeat(5,1fr);
+  border:1px solid var(--border-light);
+}
+.ob-theme-btn{
+  padding:8px 6px;font-family:var(--font-mono);font-size:9px;
+  text-transform:uppercase;letter-spacing:.06em;color:var(--muted-fg);
+  border:none;border-right:1px solid var(--border-light);border-bottom:1px solid var(--border-light);
+  background:transparent;cursor:pointer;transition:all .1s;
+  display:flex;align-items:center;justify-content:center;gap:5px;
+  white-space:nowrap;overflow:hidden;
+}
+.ob-theme-btn:nth-child(5n){border-right:none}
+.ob-theme-btn:nth-last-child(-n+5){border-bottom:none}
+.ob-theme-btn:hover{background:var(--muted);color:var(--fg)}
+.ob-theme-btn.selected{background:var(--fg);color:var(--bg)}
+.ob-theme-dot{width:6px;height:6px;flex-shrink:0;border:1px solid rgba(0,0,0,.2)}
+
+/* Generate row */
+.ob-gen-row{
+  display:flex;align-items:center;gap:24px;
+  border-top:4px solid var(--fg);padding-top:28px;
+}
+.btn-generate{
+  background:var(--fg);color:var(--bg);border:none;
+  padding:17px 40px;font-family:var(--font-mono);font-size:11px;
+  font-weight:700;text-transform:uppercase;letter-spacing:.12em;
+  cursor:pointer;transition:background .1s;
+  display:flex;align-items:center;gap:10px;flex-shrink:0;
+}
+.btn-generate:hover:not(:disabled){background:var(--muted-fg)}
+.btn-generate:disabled{opacity:.4;cursor:not-allowed}
+.ob-gen-meta{
+  font-family:var(--font-mono);font-size:9px;color:var(--muted-fg);
+  text-transform:uppercase;letter-spacing:.08em;line-height:1.7;
+}
+
+/* ════════════════════════════════════════════════════════════════ */
+/* APP VIEW                                                         */
+/* ════════════════════════════════════════════════════════════════ */
+#view-app{height:100vh;display:none;flex-direction:column;background:var(--bg)}
+
+/* App header */
+.app-hdr{
+  display:flex;align-items:center;gap:12px;padding:0 20px;height:46px;
+  border-bottom:2px solid var(--fg);background:var(--bg);flex-shrink:0;
+}
+.app-logo{font-family:var(--font-display);font-size:13px;font-weight:700;font-style:italic;letter-spacing:-.02em;flex-shrink:0}
+.app-hdr-sep{width:1px;height:18px;background:var(--border-light);flex-shrink:0}
+.app-topic-label{
+  font-family:var(--font-mono);font-size:10px;color:var(--muted-fg);
+  text-transform:uppercase;letter-spacing:.06em;flex:1;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap;
+}
+.btn-back{
+  background:transparent;border:1px solid var(--border-light);padding:4px 11px;
+  font-family:var(--font-mono);font-size:8px;text-transform:uppercase;letter-spacing:.1em;
+  cursor:pointer;transition:all .1s;color:var(--muted-fg);flex-shrink:0;
+}
+.btn-back:hover{border-color:var(--fg);color:var(--fg)}
+.btn-run{
+  background:var(--fg);color:var(--bg);border:none;padding:4px 13px;
+  font-family:var(--font-mono);font-size:8px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.1em;cursor:pointer;transition:background .1s;flex-shrink:0;
+}
+.btn-run:hover:not(:disabled){background:var(--muted-fg)}
+.btn-run:disabled{opacity:.4;cursor:not-allowed}
+#btn-save-hdr{
+  background:var(--fg);color:var(--bg);border:none;padding:4px 13px;
+  font-family:var(--font-mono);font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+  cursor:pointer;transition:background .1s;display:none;flex-shrink:0;
+}
+#btn-save-hdr:hover{background:var(--muted-fg)}
+
+/* 3-col main */
+.app-main{display:grid;grid-template-columns:220px 1fr 320px;flex:1;overflow:hidden}
+
+/* ── LEFT panel ──────────────────────────────────────────────────── */
+.app-left{border-right:1px solid var(--border-light);display:flex;flex-direction:column;overflow:hidden}
+.left-tabs{display:flex;border-bottom:1px solid var(--border-light);flex-shrink:0}
+.left-tab{
+  flex:1;padding:8px 4px;font-family:var(--font-mono);font-size:8px;
+  text-transform:uppercase;letter-spacing:.1em;color:var(--muted-fg);
+  background:transparent;border:none;border-bottom:2px solid transparent;
+  cursor:pointer;text-align:center;transition:all .1s;
+}
+.left-tab.active{color:var(--fg);border-bottom-color:var(--fg)}
+.left-tab:hover:not(.active){color:var(--fg)}
+.left-panel{display:none;flex:1;flex-direction:column;overflow:hidden;min-height:0}
+.left-panel.active{display:flex}
+
+/* Pipeline panel */
+.pipe-body{flex:0 0 auto;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column}
+/* Progress */
+.pipe-progress-wrap{margin-bottom:12px}
+.pipe-progress-track{height:1px;background:var(--border-light);position:relative}
+.pipe-progress-fill{height:100%;background:var(--fg);transition:width .15s;position:absolute;top:0;left:0}
+.pipe-progress-label{
+  font-family:var(--font-mono);font-size:8px;color:var(--muted-fg);
+  text-transform:uppercase;letter-spacing:.06em;margin-top:5px;display:flex;justify-content:space-between;
+}
+/* Pipe items */
+.pipe-item{
+  display:grid;grid-template-columns:18px 1fr 14px 50px;
+  align-items:baseline;gap:6px;padding:7px 0;
+  border-bottom:1px solid var(--border-light);transition:all .1s;
+}
+.pipe-item:last-of-type{border-bottom:none}
+.pipe-num{font-family:var(--font-mono);font-size:8px;color:var(--muted-fg)}
+.pipe-name{font-family:var(--font-mono);font-size:9px;color:var(--muted-fg);text-transform:uppercase;letter-spacing:.05em;font-weight:400}
+.pipe-status{font-family:var(--font-mono);font-size:9px;color:var(--muted-fg);text-align:center}
+.pipe-dur{font-family:var(--font-mono);font-size:8px;color:var(--muted-fg);text-align:right}
+/* States */
+.pipe-item.active .pipe-name{color:var(--fg);font-weight:700}
+.pipe-item.active .pipe-status::after{content:'_';animation:cursor-blink 1s step-end infinite}
+.pipe-item.done .pipe-name{color:var(--muted-fg)}
+.pipe-item.done .pipe-status{color:var(--fg);font-weight:700}
+.pipe-item.error .pipe-name{color:var(--fg);font-weight:700}
+@keyframes cursor-blink{0%,100%{opacity:1}50%{opacity:0}}
+/* Think text */
+.pipe-think{
+  font-family:var(--font-mono);font-size:8px;color:var(--muted-fg);font-style:italic;
+  padding:3px 0 6px 24px;display:none;border-bottom:1px solid var(--border-light);
+  text-transform:none;letter-spacing:0;
+}
+/* Sponsors */
+.sponsor-section{margin-top:auto;padding-top:12px;border-top:1px solid var(--border-light)}
+.sponsor-row{
+  display:grid;grid-template-columns:20px 1fr;gap:6px;
+  padding:5px 0;border-bottom:1px solid var(--border-light);align-items:baseline;
+}
+.sponsor-row:last-child{border-bottom:none}
+.sponsor-tag{font-family:var(--font-mono);font-size:7px;font-weight:700;text-transform:uppercase;color:var(--fg)}
+.sponsor-info{display:flex;flex-direction:column;gap:1px}
+.sponsor-name{font-family:var(--font-mono);font-size:8px;color:var(--fg);text-transform:uppercase;letter-spacing:.04em}
+.sponsor-role{font-family:var(--font-mono);font-size:7px;color:var(--muted-fg)}
+
+/* Projects panel */
+.proj-body{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.proj-panel-item{border:1px solid var(--border-light);padding:10px;transition:border-color .1s}
+.proj-panel-item:hover{border-color:var(--fg)}
+.proj-panel-title{font-size:11px;font-weight:600;color:var(--fg);margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.proj-panel-meta{font-family:var(--font-mono);font-size:8px;color:var(--muted-fg);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px}
+.proj-panel-actions{display:flex;gap:5px}
+.btn-proj-act{
+  font-family:var(--font-mono);font-size:7px;text-transform:uppercase;letter-spacing:.08em;
+  padding:3px 7px;background:transparent;border:1px solid var(--border-light);
+  cursor:pointer;color:var(--muted-fg);transition:all .1s;
+}
+.btn-proj-act:hover{border-color:var(--fg);color:var(--fg)}
+.btn-proj-act.del:hover{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.proj-panel-empty{
+  font-family:var(--font-mono);font-size:8px;color:var(--muted-fg);
+  text-transform:uppercase;letter-spacing:.08em;text-align:center;padding:20px 0;
+  border:1px dashed var(--border-light);
+}
+
+/* ── CENTER ──────────────────────────────────────────────────────── */
+.app-center{display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--border-light)}
+.center-top{
+  padding:10px 16px;border-bottom:1px solid var(--border-light);
+  background:var(--bg);flex-shrink:0;display:flex;flex-direction:column;gap:8px;
+}
+.center-top-row{display:flex;gap:8px;align-items:flex-end}
+.topic-wrap{flex:1}
+.form-label{
+  font-family:var(--font-mono);font-size:8px;text-transform:uppercase;
+  letter-spacing:.12em;color:var(--muted-fg);display:block;margin-bottom:4px;
+}
+.topic-input{
+  width:100%;background:transparent;border:none;border-bottom:1px solid var(--border-light);
+  padding:5px 0;font-size:13px;font-family:var(--font-display);font-style:italic;
+  color:var(--fg);outline:none;transition:border-color .1s;
+}
+.topic-input:focus{border-bottom-color:var(--fg)}
+.btn-gen{
+  background:var(--fg);color:var(--bg);border:none;padding:6px 14px;
+  font-family:var(--font-mono);font-size:9px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.1em;cursor:pointer;transition:background .1s;white-space:nowrap;
+}
+.btn-gen:hover:not(:disabled){background:var(--muted-fg)}
+.btn-gen:disabled{opacity:.4;cursor:not-allowed}
+.btn-reset{
+  background:transparent;border:1px solid var(--border-light);padding:6px 10px;
+  font-family:var(--font-mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;
+  cursor:pointer;color:var(--muted-fg);transition:all .1s;
+}
+.btn-reset:hover{border-color:var(--fg);color:var(--fg)}
+/* Content reference row */
+.content-ref-row{display:flex;flex-direction:column;gap:3px}
+.form-label-opt{font-weight:400;opacity:.55;font-size:7px;letter-spacing:.06em}
+.content-ref-textarea{
+  width:100%;background:transparent;border:none;border-bottom:1px solid var(--border-light);
+  padding:4px 0;color:var(--fg);font-size:11px;font-family:var(--font-body);
+  resize:none;outline:none;line-height:1.55;overflow-y:auto;
+  transition:border-color .1s, max-height .15s;
+  max-height:54px;
+}
+.content-ref-textarea:focus{border-bottom-color:var(--fg);max-height:120px}
+.content-ref-textarea::placeholder{color:var(--muted-fg);font-style:italic}
+/* Upload row */
+.upload-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.btn-upload{
+  background:transparent;color:var(--muted-fg);border:1px dashed var(--border-light);
+  padding:3px 10px;font-family:var(--font-mono);font-size:8px;text-transform:uppercase;
+  letter-spacing:.08em;cursor:pointer;transition:all .1s;
+  display:flex;align-items:center;gap:5px;flex-shrink:0;
+}
+.btn-upload:hover,.upload-row.drag-over .btn-upload{border-color:var(--fg);color:var(--fg);border-style:solid}
+.btn-upload.has-file{border-style:solid;border-color:var(--fg);color:var(--fg)}
+.ref-preview{display:none;align-items:center;gap:6px}
+.ref-preview.show{display:flex}
+.ref-thumb{width:20px;height:20px;object-fit:cover;border:1px solid var(--border-light)}
+.ref-name{font-family:var(--font-mono);font-size:8px;color:var(--muted-fg);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-transform:uppercase;letter-spacing:.04em}
+.btn-clear{background:transparent;border:none;color:var(--muted-fg);cursor:pointer;font-size:13px;padding:0 2px;line-height:1;transition:color .1s}
+.btn-clear:hover{color:var(--fg)}
+.upload-hint{font-family:var(--font-mono);font-size:8px;color:var(--muted-fg);text-transform:uppercase;letter-spacing:.05em}
+/* Theme section */
+.theme-section{display:flex;flex-direction:column;gap:4px}
+.theme-section-hd{display:flex;align-items:center;justify-content:space-between}
+.theme-chips{
+  display:grid;grid-template-columns:repeat(5,1fr);
+  border:1px solid var(--border-light);
+}
+.theme-chip{
+  display:flex;align-items:center;justify-content:center;gap:4px;
+  padding:5px 4px;
+  font-family:var(--font-mono);font-size:8px;text-transform:uppercase;letter-spacing:.05em;
+  cursor:pointer;border:none;
+  border-right:1px solid var(--border-light);
+  border-bottom:1px solid var(--border-light);
+  background:transparent;color:var(--muted-fg);
+  transition:all .1s;white-space:nowrap;overflow:hidden;
+}
+.theme-chip:nth-child(5n){border-right:none}
+.theme-chip:nth-last-child(-n+5){border-bottom:none}
+.theme-chip:hover{background:var(--muted);color:var(--fg)}
+.theme-chip.selected{background:var(--fg);color:var(--bg)}
+.theme-dot{width:5px;height:5px;flex-shrink:0}
+.btn-retheme{
+  background:transparent;border:1px solid var(--border-light);padding:3px 8px;
+  font-family:var(--font-mono);font-size:8px;text-transform:uppercase;letter-spacing:.08em;
+  cursor:pointer;color:var(--muted-fg);white-space:nowrap;display:none;transition:all .1s;flex-shrink:0;
+}
+.btn-retheme:hover:not(:disabled){border-color:var(--fg);color:var(--fg)}
+.btn-retheme:disabled{opacity:.4;cursor:not-allowed}
+/* Progress bar */
+.progress-bar{height:1px;background:var(--border-light);flex-shrink:0;position:relative}
+.progress-fill{height:100%;background:var(--fg);transition:width .25s;position:absolute;top:0;left:0}
+/* Center body */
+.center-body{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;align-items:center;gap:12px}
+/* Empty state */
+.empty-center{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;flex:1;text-align:center;padding:40px 20px}
+.empty-glyph{font-family:var(--font-display);font-size:80px;font-weight:900;color:var(--border-light);line-height:1;letter-spacing:-.04em}
+.empty-msg{font-family:var(--font-mono);font-size:9px;color:var(--muted-fg);text-transform:uppercase;letter-spacing:.1em;line-height:1.9}
+/* Skeleton */
+#skeleton-area{display:none;width:100%;max-width:300px}
+.skeleton-card{border:1px solid var(--border-light);aspect-ratio:4/5;padding:18px;display:flex;flex-direction:column}
+.skeleton-bar{background:var(--border-light);animation:sk-pulse 1.4s ease-in-out infinite}
+@keyframes sk-pulse{0%,100%{opacity:.4}50%{opacity:.9}}
+.skeleton-label{font-family:var(--font-mono);font-size:8px;text-align:center;color:var(--muted-fg);text-transform:uppercase;letter-spacing:.1em;margin-top:8px}
+/* Gallery */
+.gallery-area{width:100%}
+.gallery-hd{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px;padding-bottom:7px;border-bottom:1px solid var(--border-light)}
+.gallery-hd-title{font-family:var(--font-mono);font-size:8px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted-fg)}
+.gallery-hd-right{display:flex;align-items:center;gap:8px}
+.gallery-hd-count{font-family:var(--font-mono);font-size:8px;color:var(--muted-fg)}
+.btn-dl-all{
+  font-family:var(--font-mono);font-size:8px;text-transform:uppercase;letter-spacing:.08em;
+  background:var(--fg);color:var(--bg);border:none;padding:4px 9px;
+  cursor:pointer;display:none;transition:background .1s;
+}
+.btn-dl-all:hover{background:var(--muted-fg)}
+.gallery-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.gallery-slot{
+  aspect-ratio:4/5;background:var(--muted);border:1px solid var(--border-light);
+  position:relative;overflow:hidden;cursor:pointer;transition:border-color .1s;
+}
+.gallery-slot:hover{border-color:var(--fg)}
+.gallery-slot.selected{border:2px solid var(--fg)}
+.gallery-slot.generating{border-color:var(--muted-fg)}
+.gallery-slot.rendering{border-color:var(--fg)}
+.gallery-slot.ready{border-color:var(--border-light)}
+.gallery-slot.ready.selected{border:2px solid var(--fg)}
+.gallery-slot img{width:100%;height:100%;object-fit:cover;display:block}
+.gallery-slot-shimmer{position:absolute;inset:0;background:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+.slot-num{font-family:var(--font-mono);font-size:10px;font-weight:500;color:var(--muted-fg)}
+.slot-progress-wrap{width:60%;height:3px;background:var(--border-light);border-radius:2px;overflow:hidden;position:relative}
+.slot-progress-fill{position:absolute;top:0;left:-50%;width:50%;height:100%;border-radius:2px;background:var(--border-light)}
+.slot-status-lbl{font-family:var(--font-mono);font-size:7px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted-fg);height:9px}
+/* Active states — sweep animation */
+@keyframes slot-sweep{0%{left:-50%}100%{left:110%}}
+.gallery-slot.generating .slot-progress-fill{background:#4F6EF7;animation:slot-sweep 1.1s cubic-bezier(.4,0,.6,1) infinite}
+.gallery-slot.rendering  .slot-progress-fill{background:var(--fg);animation:slot-sweep 0.8s cubic-bezier(.4,0,.6,1) infinite}
+.gallery-slot.generating .slot-status-lbl::after{content:'Fetching image…'}
+.gallery-slot.rendering  .slot-status-lbl::after{content:'Rendering…'}
+/* Overlay progress bar — visible even when image already loaded (re-render) */
+.slot-loading-bar{position:absolute;bottom:0;left:0;right:0;height:3px;overflow:hidden;pointer-events:none;display:none}
+.slot-loading-bar::after{content:'';position:absolute;top:0;left:-50%;width:50%;height:100%;background:#4F6EF7;animation:slot-sweep 1s cubic-bezier(.4,0,.6,1) infinite}
+.gallery-slot.generating .slot-loading-bar,
+.gallery-slot.rendering  .slot-loading-bar{display:block}
+.gallery-slot.rendering  .slot-loading-bar::after{background:var(--fg)}
+.gallery-slot-overlay{
+  position:absolute;bottom:0;left:0;right:0;padding:8px 6px 5px;
+  background:linear-gradient(to top,rgba(0,0,0,.75) 0%,transparent 100%);
+  display:flex;justify-content:space-between;align-items:flex-end;gap:4px;
+  opacity:0;transition:opacity .1s;
+}
+.gallery-slot:hover .gallery-slot-overlay{opacity:1}
+.gallery-slot-title{font-family:var(--font-mono);font-size:7px;color:#fff;text-transform:uppercase;letter-spacing:.04em;flex:1;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.btn-dl-slot{
+  background:rgba(255,255,255,.9);border:none;color:#000;
+  font-family:var(--font-mono);font-size:7px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.08em;padding:3px 5px;cursor:pointer;flex-shrink:0;
+}
+.slot-badge{
+  position:absolute;top:4px;left:4px;background:rgba(0,0,0,.6);color:#fff;
+  font-family:var(--font-mono);font-size:7px;font-weight:700;padding:2px 4px;
+  text-transform:uppercase;letter-spacing:.05em;
+}
+
+/* ── RIGHT panel — full-height editor ───────────────────────────── */
+.app-right{display:flex;flex-direction:column;overflow:hidden}
+.editor-wrap{flex:1;overflow-y:auto;padding:14px}
+.editor-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border-light)}
+.editor-hd-label{font-family:var(--font-mono);font-size:8px;font-weight:500;text-transform:uppercase;letter-spacing:.12em;color:var(--muted-fg)}
+.slide-nav{display:flex;gap:3px;align-items:center}
+.slide-nav-label{font-family:var(--font-mono);font-size:9px;color:var(--muted-fg);min-width:30px;text-align:center}
+.btn-nav{
+  background:transparent;border:1px solid var(--border-light);padding:2px 6px;
+  font-size:11px;color:var(--muted-fg);cursor:pointer;line-height:1.3;transition:all .1s;
+}
+.btn-nav:hover:not(:disabled){border-color:var(--fg);color:var(--fg)}
+.btn-nav:disabled{opacity:.3;cursor:not-allowed}
+.slide-preview-wrap{width:160px;margin:0 auto 14px}
+.slide-preview-box{
+  width:100%;aspect-ratio:4/5;background:var(--muted);border:1px solid var(--border-light);
+  overflow:hidden;display:flex;align-items:center;justify-content:center;
+}
+.slide-preview-box img{width:100%;height:100%;object-fit:cover;display:block}
+.slide-preview-empty{font-family:var(--font-mono);font-size:8px;text-align:center;color:var(--muted-fg);text-transform:uppercase;letter-spacing:.06em;padding:10px;line-height:1.7}
+.editor-field{margin-bottom:7px}
+.editor-field-label{font-family:var(--font-mono);font-size:8px;font-weight:500;text-transform:uppercase;letter-spacing:.1em;color:var(--muted-fg);display:block;margin-bottom:4px}
+.editor-textarea{
+  width:100%;background:transparent;border:none;border-bottom:1px solid var(--border-light);
+  padding:5px 0;color:var(--fg);font-size:12px;font-family:var(--font-body);
+  resize:none;outline:none;transition:border-width .1s;line-height:1.5;
+}
+.editor-textarea:focus{border-bottom-color:var(--fg);border-bottom-width:2px}
+/* Title options */
+.title-opts-wrap{margin-bottom:8px;display:none}
+.title-opts-label{font-family:var(--font-mono);font-size:8px;font-weight:500;text-transform:uppercase;letter-spacing:.1em;color:var(--muted-fg);display:block;margin-bottom:5px}
+.title-opt-btn{
+  width:100%;text-align:left;background:transparent;border:1px solid var(--border-light);
+  padding:5px 8px;font-family:var(--font-body);font-size:10px;color:var(--muted-fg);
+  cursor:pointer;transition:all .1s;line-height:1.4;margin-bottom:3px;display:block;
+}
+.title-opt-btn:hover{border-color:var(--fg);color:var(--fg)}
+.title-opt-btn.active{border-color:var(--fg);background:var(--fg);color:var(--bg)}
+.editor-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-top:8px}
+.btn-edit{
+  background:transparent;border:1px solid var(--border-light);padding:6px 4px;
+  font-family:var(--font-mono);font-size:8px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.06em;cursor:pointer;color:var(--muted-fg);transition:all .1s;text-align:center;
+}
+.btn-edit:hover:not(:disabled){border-color:var(--fg);color:var(--fg)}
+.btn-edit:disabled{opacity:.35;cursor:not-allowed}
+/* Logs */
+.logs-section{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0}
+.logs-hd{padding:7px 10px;font-family:var(--font-mono);font-size:8px;font-weight:500;text-transform:uppercase;letter-spacing:.12em;color:var(--muted-fg);border-bottom:1px solid var(--border-light);flex-shrink:0}
+.logs-body{flex:1;overflow-y:auto;padding:4px 8px}
+.log-entry{display:flex;gap:8px;padding:4px 3px;border-bottom:1px solid rgba(0,0,0,.04);align-items:flex-start}
+.log-time{font-family:var(--font-mono);font-size:8px;color:var(--muted-fg);flex-shrink:0;padding-top:1px}
+.log-body{flex:1}
+.log-msg{font-family:var(--font-mono);font-size:9px;text-transform:uppercase;letter-spacing:.04em;color:var(--fg);line-height:1.5}
+.log-msg.start{font-weight:700}
+.log-msg.done{color:var(--muted-fg)}
+.log-msg.think{font-style:italic;color:var(--muted-fg);text-transform:none;letter-spacing:0}
+.log-msg.ready{font-weight:700}
+.log-msg.error{font-weight:700}
+.log-msg.imgprog{}
+.log-msg.render{color:var(--muted-fg)}
+
+/* Toast */
+.toast{
+  position:fixed;bottom:20px;right:20px;z-index:999;
+  background:var(--fg);color:var(--bg);padding:10px 18px;
+  font-family:var(--font-mono);font-size:9px;text-transform:uppercase;letter-spacing:.08em;
+  display:none;align-items:center;gap:8px;
+}
+.toast.show{display:flex}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- ONBOARDING VIEW                                                  -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<div id="view-onboard">
+  <header class="ob-hdr">
+    <div class="ob-logo">CarouselFlow AI</div>
+    <div class="ob-sponsors">
+      <span class="ob-sp">Claude</span>
+      <span class="ob-sp">DeepMind</span>
+      <span class="ob-sp">OpenAI</span>
+      <span class="ob-sp">ClickHouse</span>
+      <span class="ob-sp">Datadog</span>
+    </div>
+  </header>
+
+  <div class="ob-body">
+    <!-- Hero -->
+    <section class="ob-hero">
+      <div class="ob-eyebrow">7 AI Agents · Real-time Pipeline</div>
+      <h1 class="ob-h1">Generate Your<br><em>Carousel Post.</em></h1>
+      <div class="ob-hero-meta">Social media carousels — researched, designed, and written by AI</div>
+    </section>
+
+    <!-- Import cards -->
+    <section class="ob-cards-section">
+      <div class="ob-section-label">Enhancements — Optional</div>
+      <div class="ob-cards">
+
+        <!-- Card 01: Content Reference -->
+        <div class="ob-card">
+          <div class="ob-card-num">01 — CONTENT</div>
+          <div class="ob-card-title">Content<br>Reference</div>
+          <div class="ob-card-desc">Paste your notes, story, or key points. The AI will extract a topic and write slides based on your content.</div>
+          <div class="ob-card-body">
+            <textarea id="ob-content-ref" class="ob-dropzone" rows="4"
+              placeholder="Paste text, notes, key points, or your story here…"
+              style="resize:none;font-family:var(--font-body);font-size:11px;color:var(--fg);border:1px dashed var(--border-light);background:transparent;padding:12px;outline:none;flex:1;"
+              onfocus="this.style.borderColor='var(--border)'"
+              onblur="this.style.borderColor='var(--border-light)'"
+              oninput="onContentNotesInput(this.value)"></textarea>
+            <span class="ob-optional">Optional — influences topic + copywriting</span>
+          </div>
+        </div>
+
+        <!-- Card 02: Style Reference -->
+        <div class="ob-card">
+          <div class="ob-card-num">02 — STYLE</div>
+          <div class="ob-card-title">Style<br>Reference</div>
+          <div class="ob-card-desc">Upload an image for Claude to analyse visual style, palette, and layout direction.</div>
+          <div class="ob-card-body">
+            <input type="file" id="file-input" accept="image/*" style="display:none" onchange="onFileSelect(event)">
+            <div class="ob-dropzone" id="upload-row"
+              onclick="document.getElementById('file-input').click()"
+              ondragover="event.preventDefault();this.classList.add('drag-over')"
+              ondragleave="this.classList.remove('drag-over')"
+              ondrop="handleDrop(event)">
+              <div class="ob-dz-icon">↑</div>
+              <div class="ob-dz-text">Drop image or click to browse</div>
+            </div>
+            <div class="ob-ref-preview" id="ref-preview">
+              <img class="ob-ref-thumb" id="ref-thumb" src="" alt="">
+              <span class="ob-ref-name" id="ref-name"></span>
+              <button class="ob-ref-clear" onclick="clearRef()">×</button>
+            </div>
+            <span class="ob-optional">Optional</span>
+          </div>
+        </div>
+
+        <!-- Card 03: Projects -->
+        <div class="ob-card">
+          <div class="ob-card-num">03 — PROJECTS</div>
+          <div class="ob-card-title">Past<br>Projects</div>
+          <div class="ob-card-desc">Load a previous carousel or browse saved projects to continue editing.</div>
+          <div class="ob-card-body">
+            <div class="ob-proj-list" id="ob-proj-list">
+              <div class="ob-proj-empty">No saved projects yet</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Topic + Theme + Generate -->
+    <section class="ob-gen-section">
+      <div class="ob-field">
+        <label class="ob-field-label" for="ob-topic">Topic</label>
+        <div class="topic-suggest-wrap">
+          <input class="ob-topic-input" id="ob-topic"
+            placeholder="e.g. Founder lessons from NYC networking"
+            value="Founder lessons from NYC networking"
+            onfocus="showTopicDropdown('ob')"
+            onblur="setTimeout(()=>hideTopicDropdown('ob'),150)"
+            autocomplete="off">
+          <div class="topic-dropdown" id="ob-topic-dropdown"></div>
+        </div>
+      </div>
+
+      <div class="ob-field">
+        <label class="ob-field-label">Visual Theme</label>
+        <div class="ob-theme-grid" id="ob-theme-chips"></div>
+      </div>
+
+      <div class="ob-gen-row">
+        <button class="btn-generate" id="btn-generate" onclick="startGenerateFromOnboard()">
+          Generate Post →
+        </button>
+        <div class="ob-gen-meta">
+          7 AI agents · ~30 seconds<br>
+          PNG export · 1080 × 1350px
+        </div>
+      </div>
+    </section>
+  </div><!-- /ob-body -->
+</div><!-- /view-onboard -->
+
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- APP VIEW                                                         -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<div id="view-app">
+  <!-- Header -->
+  <header class="app-hdr">
+    <div class="app-logo">CarouselFlow AI</div>
+    <div class="app-hdr-sep"></div>
+    <div class="app-topic-label" id="app-topic-label">—</div>
+    <button class="btn-back" onclick="showOnboarding()">← Back</button>
+    <button class="btn-run" id="btn-run" onclick="runDemo()">⚡ Demo</button>
+    <button id="btn-save-hdr" onclick="saveProject()">Save Project</button>
+  </header>
+
+  <div class="app-main">
+
+    <!-- LEFT — Pipeline + Projects -->
+    <aside class="app-left">
+      <div class="left-tabs">
+        <button class="left-tab active" id="ltab-pipeline" onclick="switchLTab('pipeline')">Pipeline</button>
+        <button class="left-tab" id="ltab-projects" onclick="switchLTab('projects')">Projects</button>
+      </div>
+
+      <!-- Pipeline panel -->
+      <div class="left-panel active" id="lpanel-pipeline">
+        <div class="pipe-body">
+          <div class="pipe-progress-wrap">
+            <div class="pipe-progress-track">
+              <div class="pipe-progress-fill" id="progress" style="width:0%"></div>
+            </div>
+            <div class="pipe-progress-label">
+              <span>Pipeline</span>
+              <span id="pipe-label-count">0 / 7</span>
+            </div>
+          </div>
+
+          <!-- Pipe items -->
+          <div class="pipe-item" id="node-research">
+            <span class="pipe-num">01</span>
+            <span class="pipe-name">Research</span>
+            <span class="pipe-status" id="pipe-status-research"></span>
+            <span class="pipe-dur" id="dur-research"></span>
+          </div>
+          <div class="pipe-think" id="think-research"></div>
+
+          <div class="pipe-item" id="node-style_reference">
+            <span class="pipe-num">02</span>
+            <span class="pipe-name">Style Ref</span>
+            <span class="pipe-status" id="pipe-status-style_reference"></span>
+            <span class="pipe-dur" id="dur-style_reference"></span>
+          </div>
+          <div class="pipe-think" id="think-style_reference"></div>
+
+          <div class="pipe-item" id="node-design">
+            <span class="pipe-num">03</span>
+            <span class="pipe-name">Design</span>
+            <span class="pipe-status" id="pipe-status-design"></span>
+            <span class="pipe-dur" id="dur-design"></span>
+          </div>
+          <div class="pipe-think" id="think-design"></div>
+
+          <div class="pipe-item" id="node-brand">
+            <span class="pipe-num">04</span>
+            <span class="pipe-name">Brand</span>
+            <span class="pipe-status" id="pipe-status-brand"></span>
+            <span class="pipe-dur" id="dur-brand"></span>
+          </div>
+          <div class="pipe-think" id="think-brand"></div>
+
+          <div class="pipe-item" id="node-copywriting">
+            <span class="pipe-num">05</span>
+            <span class="pipe-name">Copywriting</span>
+            <span class="pipe-status" id="pipe-status-copywriting"></span>
+            <span class="pipe-dur" id="dur-copywriting"></span>
+          </div>
+          <div class="pipe-think" id="think-copywriting"></div>
+
+          <div class="pipe-item" id="node-carousel_engine">
+            <span class="pipe-num">06</span>
+            <span class="pipe-name">Engine</span>
+            <span class="pipe-status" id="pipe-status-carousel_engine"></span>
+            <span class="pipe-dur" id="dur-carousel_engine"></span>
+          </div>
+          <div class="pipe-think" id="think-carousel_engine"></div>
+
+          <div class="pipe-item" id="node-image_gen">
+            <span class="pipe-num">07</span>
+            <span class="pipe-name">Image Gen</span>
+            <span class="pipe-status" id="pipe-status-image_gen"></span>
+            <span class="pipe-dur" id="dur-image_gen"></span>
+          </div>
+          <div class="pipe-think" id="think-image_gen"></div>
+
+          <div class="pipe-item" id="node-analytics">
+            <span class="pipe-num">08</span>
+            <span class="pipe-name">Analytics</span>
+            <span class="pipe-status" id="pipe-status-analytics"></span>
+            <span class="pipe-dur" id="dur-analytics"></span>
+          </div>
+          <div class="pipe-think" id="think-analytics"></div>
+
+          <!-- Sponsors -->
+          <div class="sponsor-section">
+            <div class="sponsor-row">
+              <span class="sponsor-tag">C</span>
+              <div class="sponsor-info"><span class="sponsor-name">Anthropic</span><span class="sponsor-role">Layout design</span></div>
+            </div>
+            <div class="sponsor-row">
+              <span class="sponsor-tag">G</span>
+              <div class="sponsor-info"><span class="sponsor-name">DeepMind</span><span class="sponsor-role">Research & copy</span></div>
+            </div>
+            <div class="sponsor-row">
+              <span class="sponsor-tag">OA</span>
+              <div class="sponsor-info"><span class="sponsor-name">OpenAI</span><span class="sponsor-role">Image generation</span></div>
+            </div>
+            <div class="sponsor-row">
+              <span class="sponsor-tag">CH</span>
+              <div class="sponsor-info"><span class="sponsor-name">ClickHouse</span><span class="sponsor-role">Analytics storage</span></div>
+            </div>
+            <div class="sponsor-row">
+              <span class="sponsor-tag">DD</span>
+              <div class="sponsor-info"><span class="sponsor-name">Datadog</span><span class="sponsor-role">Metrics & tracing</span></div>
+            </div>
+          </div>
+        </div><!-- /pipe-body -->
+
+        <!-- Live Logs — below pipeline items -->
+        <div class="logs-section">
+          <div class="logs-hd">Live Logs</div>
+          <div class="logs-body" id="log-entries">
+            <div style="padding:14px 4px;font-family:var(--font-mono);font-size:9px;color:var(--muted-fg);text-transform:uppercase;letter-spacing:.08em">
+              Waiting for pipeline…
+            </div>
+          </div>
+        </div>
+      </div><!-- /lpanel-pipeline -->
+
+      <!-- Projects panel -->
+      <div class="left-panel" id="lpanel-projects">
+        <div class="proj-body" id="project-list">
+          <div class="proj-panel-empty">No saved projects yet</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CENTER — Gallery -->
+    <div class="app-center">
+      <div class="center-top">
+        <div class="center-top-row">
+          <div class="topic-wrap">
+            <label class="form-label">Topic</label>
+            <div class="topic-suggest-wrap">
+              <input class="topic-input" id="inp-topic" placeholder="e.g. Founder lessons from NYC networking"
+                onfocus="showTopicDropdown('app')"
+                onblur="setTimeout(()=>hideTopicDropdown('app'),150)"
+                autocomplete="off">
+              <div class="topic-dropdown" id="app-topic-dropdown"></div>
+            </div>
+          </div>
+          <button class="btn-gen" id="btn-gen" onclick="startGenerate()">Generate</button>
+          <button class="btn-reset" onclick="resetAll()">Reset</button>
+        </div>
+        <div class="content-ref-row">
+          <label class="form-label">Content Reference <span class="form-label-opt">Optional — guides copywriting agent</span></label>
+          <textarea class="content-ref-textarea" id="inp-content-ref" rows="2"
+            placeholder="Paste background notes, key points, or personal stories for the AI to draw from…"
+            oninput="contentNotes=this.value"></textarea>
+        </div>
+        <div class="upload-row" id="upload-row-app">
+          <button class="btn-upload" id="btn-upload" onclick="document.getElementById('file-input').click()">+ Style Ref</button>
+          <div class="ref-preview" id="ref-preview-app">
+            <img class="ref-thumb" id="ref-thumb-app" src="" alt="">
+            <span class="ref-name" id="ref-name-app"></span>
+            <button class="btn-clear" onclick="clearRef()">×</button>
+          </div>
+          <span class="upload-hint" id="upload-hint">Claude analyses it for layout design</span>
+        </div>
+        <div class="theme-section">
+          <div class="theme-section-hd">
+            <label class="form-label">Visual Theme</label>
+            <button class="btn-retheme" id="btn-retheme" onclick="reapplyTheme()">↺ Apply Theme</button>
+          </div>
+          <div class="theme-chips" id="theme-chips"></div>
+        </div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+
+      <div class="center-body">
+        <div class="empty-center" id="empty-state">
+          <div class="empty-glyph">CF</div>
+          <div class="empty-msg">Enter a topic above and click<br>Generate to start the pipeline.</div>
+        </div>
+        <div id="skeleton-area">
+          <div class="skeleton-card">
+            <div class="skeleton-bar" style="height:8px;width:25%;margin-bottom:16px"></div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:9px;justify-content:center">
+              <div class="skeleton-bar" style="height:18px;width:88%"></div>
+              <div class="skeleton-bar" style="height:18px;width:72%"></div>
+              <div class="skeleton-bar" style="height:18px;width:55%"></div>
+            </div>
+            <div style="border-top:1px solid var(--border-light);padding-top:10px;display:flex;flex-direction:column;gap:6px;margin-top:10px">
+              <div class="skeleton-bar" style="height:9px;width:92%"></div>
+              <div class="skeleton-bar" style="height:9px;width:75%"></div>
+            </div>
+          </div>
+          <div class="skeleton-label" id="skeleton-label">Running pipeline…</div>
+        </div>
+        <div class="gallery-area" id="gallery-area" style="display:none">
+          <div class="gallery-hd">
+            <span class="gallery-hd-title">Generated Slides</span>
+            <div class="gallery-hd-right">
+              <span class="gallery-hd-count"><span id="gallery-done">0</span> / <span id="gallery-total">6</span></span>
+              <button class="btn-dl-all" id="btn-dl-all" onclick="downloadAll()">↓ All PNG</button>
+            </div>
+          </div>
+          <div class="gallery-grid" id="gallery-grid"></div>
+        </div>
+      </div>
+    </div><!-- /app-center -->
+
+    <!-- RIGHT — Slide Editor + Logs -->
+    <aside class="app-right">
+      <div class="editor-wrap">
+        <div class="editor-hd">
+          <span class="editor-hd-label">Slide Editor</span>
+          <div class="slide-nav">
+            <button class="btn-nav" id="btn-nav-prev" onclick="navSlide(-1)" disabled>‹</button>
+            <span class="slide-nav-label" id="slide-nav-label">—</span>
+            <button class="btn-nav" id="btn-nav-next" onclick="navSlide(1)" disabled>›</button>
+          </div>
+        </div>
+        <div class="slide-preview-wrap">
+          <div class="slide-preview-box" id="slide-preview-box">
+            <div class="slide-preview-empty">Click a slide<br>to edit</div>
+          </div>
+        </div>
+        <div id="editor-fields" style="display:none">
+          <div class="title-opts-wrap" id="title-opts-wrap">
+            <span class="title-opts-label">Choose Title</span>
+            <div id="title-opts"></div>
+          </div>
+          <div class="editor-field">
+            <label class="editor-field-label">Title</label>
+            <textarea class="editor-textarea" id="edit-title" rows="3"></textarea>
+          </div>
+          <div class="editor-field">
+            <label class="editor-field-label">Body</label>
+            <textarea class="editor-textarea" id="edit-body" rows="6"></textarea>
+          </div>
+          <div class="editor-actions">
+            <button class="btn-edit" id="btn-regen-img" onclick="regenCurrentImage()">↺ New Image</button>
+            <button class="btn-edit" id="btn-rerender" onclick="rerenderCurrentSlide()">Re-render</button>
+            <button class="btn-edit" id="btn-dl-current" onclick="downloadCurrentSlide()">↓ Download</button>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div><!-- /app-main -->
+</div><!-- /view-app -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── 15 Visual Themes ──────────────────────────────────────────────
+const THEMES = [
+  { id:'dark-luxury',       name:'Dark Luxury',       bg:'#0A0A0A', primary:'#C9A96E', text:'#FFFFFF', muted:'#D4C5A9', font:'Georgia, serif',             ovOp:0.55 },
+  { id:'editorial-luxury',  name:'Editorial Luxury',  bg:'#1C1C1C', primary:'#D4A853', text:'#F5F5F0', muted:'#C0B090', font:'Georgia, serif',             ovOp:0.50 },
+  { id:'modern-dark',       name:'Modern Dark',       bg:'#0D0D0D', primary:'#4F6EF7', text:'#FFFFFF', muted:'#9CA3AF', font:'Inter, sans-serif',          ovOp:0.50 },
+  { id:'linear-inspired',   name:'Linear',            bg:'#0F0F14', primary:'#8B5CF6', text:'#E2E8F0', muted:'#94A3B8', font:'Inter, sans-serif',          ovOp:0.55 },
+  { id:'cyberpunk-neon',    name:'Cyberpunk',         bg:'#0A0015', primary:'#FF006E', text:'#FFFFFF', muted:'#FF99CC', font:'Inter, sans-serif',          ovOp:0.60 },
+  { id:'glassmorphism',     name:'Glass',             bg:'#0F1729', primary:'#60A5FA', text:'#FFFFFF', muted:'#93C5FD', font:'Inter, sans-serif',          ovOp:0.45 },
+  { id:'creator-playbook',  name:'Creator',           bg:'#18181B', primary:'#F472B6', text:'#FFFFFF', muted:'#D4D4D8', font:'Inter, sans-serif',          ovOp:0.50 },
+  { id:'neo-brutalist',     name:'Neo Brutal',        bg:'#FFFF00', primary:'#000000', text:'#000000', muted:'#333333', font:'Impact, Inter, sans-serif',  ovOp:0.05 },
+  { id:'monochrome-light',  name:'Monochrome',        bg:'#FFFFFF', primary:'#1A1A1A', text:'#1A1A1A', muted:'#6B7280', font:'Inter, sans-serif',          ovOp:0.15 },
+  { id:'bauhaus-light',     name:'Bauhaus',           bg:'#F5F0E8', primary:'#D4372E', text:'#1A1A1A', muted:'#5A5A5A', font:'Inter, sans-serif',          ovOp:0.10 },
+  { id:'newsprint-light',   name:'Newsprint',         bg:'#F8F5ED', primary:'#8B0000', text:'#1A1A1A', muted:'#4A4A4A', font:'Georgia, serif',             ovOp:0.12 },
+  { id:'saas-clean',        name:'SaaS',              bg:'#FFFFFF', primary:'#6366F1', text:'#0F172A', muted:'#64748B', font:'Inter, sans-serif',          ovOp:0.25 },
+  { id:'soft-minimal',      name:'Soft',              bg:'#FDF6F0', primary:'#FF6B6B', text:'#2D3748', muted:'#718096', font:'Inter, sans-serif',          ovOp:0.20 },
+  { id:'swiss-grid',        name:'Swiss',             bg:'#FFFFFF', primary:'#FF0000', text:'#000000', muted:'#666666', font:'Helvetica Neue, Inter, sans-serif', ovOp:0.10 },
+  { id:'yc-startup',        name:'YC',                bg:'#FFFFFF', primary:'#FF6600', text:'#1A1A1A', muted:'#6B7280', font:'Inter, sans-serif',          ovOp:0.25 },
+]
+
+// ── State ─────────────────────────────────────────────────────────
+let running          = false
+let agentTimings     = []
+let referenceImage   = null
+let contentNotes     = ''
+let designSpec       = null
+let currentThemeId   = 'dark-luxury'
+let slidesData       = []
+let renderedPngs     = []
+let totalSlides      = 6
+let doneCount        = 0
+let selectedSlideIdx = -1
+let currentTopic     = ''
+let agentsDone       = 0
+const fontReady      = document.fonts.ready
+
+// ── View switching ────────────────────────────────────────────────
+function showOnboarding() {
+  document.getElementById('view-app').style.display = 'none'
+  document.getElementById('view-onboard').style.display = 'flex'
+  renderObProjectList()
+}
+
+function showApp() {
+  document.getElementById('view-onboard').style.display = 'none'
+  document.getElementById('view-app').style.display = 'flex'
+}
+
+// ── Topic suggestions ──────────────────────────────────────────────
+let topicSuggestions = []
+let _suggestTimer = null
+
+async function fetchTopicSuggestions(notes) {
+  clearTimeout(_suggestTimer)
+  if (!notes || notes.trim().length < 30) { topicSuggestions = []; renderTopicDropdowns(); return }
+  _suggestTimer = setTimeout(async () => {
+    try {
+      const res = await fetch('/api/suggest-topics', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content_notes: notes }),
+      })
+      if (!res.ok) return
+      const { suggestions } = await res.json()
+      topicSuggestions = suggestions || []
+      renderTopicDropdowns()
+    } catch {}
+  }, 500)
+}
+
+function renderTopicDropdowns() {
+  for (const id of ['ob-topic-dropdown', 'app-topic-dropdown']) {
+    const el = document.getElementById(id)
+    if (!el) continue
+    if (!topicSuggestions.length) { el.classList.remove('show'); continue }
+    el.innerHTML = topicSuggestions.map(s => `
+      <div class="topic-suggest-item" onmousedown="applyTopicSuggestion('${escAttr(s.topic)}')">
+        <div class="topic-suggest-angle">${escHtml(s.angle)}</div>
+        <div class="topic-suggest-text">${escHtml(s.topic)}</div>
+      </div>`).join('')
+  }
+}
+
+function showTopicDropdown(ctx) {
+  if (!topicSuggestions.length) return
+  const id = ctx === 'ob' ? 'ob-topic-dropdown' : 'app-topic-dropdown'
+  document.getElementById(id)?.classList.add('show')
+}
+
+function hideTopicDropdown(ctx) {
+  const id = ctx === 'ob' ? 'ob-topic-dropdown' : 'app-topic-dropdown'
+  document.getElementById(id)?.classList.remove('show')
+}
+
+function applyTopicSuggestion(topic) {
+  const obEl  = document.getElementById('ob-topic')
+  const appEl = document.getElementById('inp-topic')
+  if (obEl)  obEl.value  = topic
+  if (appEl) appEl.value = topic
+  document.getElementById('ob-topic-dropdown')?.classList.remove('show')
+  document.getElementById('app-topic-dropdown')?.classList.remove('show')
+}
+
+// ── Content notes → fetch suggestions ─────────────────────────────
+function onContentNotesInput(value) {
+  contentNotes = value
+  const appRef = document.getElementById('inp-content-ref')
+  if (appRef) appRef.value = value
+  fetchTopicSuggestions(value)
+}
+
+function startGenerateFromOnboard() {
+  const topicEl = document.getElementById('ob-topic')
+  let topic = topicEl.value.trim()
+  // Fall back to first suggestion if topic is still empty
+  if (!topic && topicSuggestions.length) {
+    topic = topicSuggestions[0].topic
+    topicEl.value = topic
+  }
+  if (!topic) { showToast('Please enter a topic first'); return }
+  document.getElementById('inp-topic').value = topic
+  const notes = document.getElementById('ob-content-ref')?.value.trim() || ''
+  contentNotes = notes
+  const appRef = document.getElementById('inp-content-ref')
+  if (appRef) appRef.value = notes
+  showApp()
+  startGenerate()
+}
+
+// ── Left tab switching ─────────────────────────────────────────────
+function switchLTab(tab) {
+  document.querySelectorAll('.left-tab').forEach(t => t.classList.remove('active'))
+  document.querySelectorAll('.left-panel').forEach(p => p.classList.remove('active'))
+  document.getElementById(`ltab-${tab}`).classList.add('active')
+  document.getElementById(`lpanel-${tab}`).classList.add('active')
+}
+
+// ── Pipeline nodes ─────────────────────────────────────────────────
+const AGENTS = ['research','style_reference','design','brand','copywriting','carousel_engine','image_gen','analytics']
+
+function setNode(name, state, think='', dur=0) {
+  const n = document.getElementById(`node-${name}`)
+  if (!n) return
+  n.className = `pipe-item ${state}`
+
+  const s = document.getElementById(`pipe-status-${name}`)
+  if (s) s.textContent = state === 'done' ? '✓' : state === 'error' ? '✗' : ''
+
+  const t = document.getElementById(`think-${name}`)
+  if (t) { if (think && state === 'active') { t.textContent = think; t.style.display = 'block' } else t.style.display = 'none' }
+
+  const d = document.getElementById(`dur-${name}`)
+  if (d && dur) d.textContent = `${dur}ms`
+
+  const doneItems = document.querySelectorAll('.pipe-item.done').length
+  const lbl = document.getElementById('pipe-label-count')
+  if (lbl) lbl.textContent = `${doneItems} / 7`
+}
+
+function resetNodes() {
+  AGENTS.forEach(a => {
+    const n = document.getElementById(`node-${a}`)
+    if (n) n.className = 'pipe-item'
+    const s = document.getElementById(`pipe-status-${a}`)
+    if (s) s.textContent = ''
+    const t = document.getElementById(`think-${a}`)
+    if (t) { t.textContent = ''; t.style.display = 'none' }
+    const d = document.getElementById(`dur-${a}`)
+    if (d) d.textContent = ''
+  })
+  const lbl = document.getElementById('pipe-label-count')
+  if (lbl) lbl.textContent = '0 / 7'
+}
+
+// ── Progress bar ───────────────────────────────────────────────────
+function setProgress(pct) {
+  const el = document.getElementById('progress-fill') || document.getElementById('progress')
+  if (el) el.style.width = pct + '%'
+}
+
+// ── Log panel ──────────────────────────────────────────────────────
+function clearLogs() {
+  const el = document.getElementById('log-entries')
+  if (el) el.innerHTML = ''
+}
+
+function appendLog(cls, msg) {
+  const box = document.getElementById('log-entries')
+  if (!box) return
+  const now = new Date()
+  const ts  = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`
+  const wrap = document.createElement('div')
+  wrap.className = 'log-entry'
+  wrap.innerHTML = `<span class="log-time">${ts}</span>
+    <div class="log-body"><div class="log-msg ${cls}">${escHtml(msg)}</div></div>`
+  box.appendChild(wrap)
+  box.parentElement.scrollTop = 99999
+}
+
+function pad(n) { return String(n).padStart(2,'0') }
+
+// ── Skeleton ───────────────────────────────────────────────────────
+function showSkeleton(label='Running pipeline…') {
+  document.getElementById('empty-state').style.display   = 'none'
+  document.getElementById('gallery-area').style.display  = 'none'
+  document.getElementById('skeleton-area').style.display = 'flex'
+  document.getElementById('skeleton-label').textContent  = label
+}
+function hideSkeleton() { document.getElementById('skeleton-area').style.display = 'none' }
+
+// ── Slide editor ───────────────────────────────────────────────────
+function selectSlide(idx) {
+  if (selectedSlideIdx >= 0) {
+    const prev = document.getElementById(`gslot-${selectedSlideIdx + 1}`)
+    if (prev) prev.classList.remove('selected')
+  }
+  selectedSlideIdx = idx
+  const slot = document.getElementById(`gslot-${idx + 1}`)
+  if (slot) slot.classList.add('selected')
+  updateEditor()
+}
+
+function updateEditor() {
+  const slide   = slidesData[selectedSlideIdx]
+  const png     = renderedPngs[selectedSlideIdx]
+  const fields  = document.getElementById('editor-fields')
+  const preview = document.getElementById('slide-preview-box')
+  const navLbl  = document.getElementById('slide-nav-label')
+
+  if (!slide) {
+    if (fields)  fields.style.display = 'none'
+    if (preview) preview.innerHTML = '<div class="slide-preview-empty">Click a slide<br>to edit</div>'
+    if (navLbl)  navLbl.textContent = '—'
+    document.getElementById('btn-nav-prev').disabled = true
+    document.getElementById('btn-nav-next').disabled = true
+    return
+  }
+
+  if (navLbl) navLbl.textContent = `${selectedSlideIdx + 1}/${totalSlides}`
+
+  if (preview) {
+    preview.innerHTML = png
+      ? `<img src="${escAttr(png)}" alt="Slide ${selectedSlideIdx + 1}">`
+      : '<div class="slide-preview-empty">Rendering…</div>'
+  }
+
+  const titleEl = document.getElementById('edit-title')
+  const bodyEl  = document.getElementById('edit-body')
+  if (titleEl) titleEl.value = slide.title || ''
+  if (bodyEl)  bodyEl.value  = slide.body  || ''
+  if (fields)  fields.style.display = 'block'
+
+  // Render title options if available
+  const optsWrap = document.getElementById('title-opts-wrap')
+  const optsBox  = document.getElementById('title-opts')
+  const opts = slide.title_options
+  if (optsWrap && optsBox && opts && opts.length > 1) {
+    optsWrap.style.display = 'block'
+    optsBox.innerHTML = opts.map((t, i) => `
+      <button class="title-opt-btn ${t === slide.title ? 'active' : ''}"
+        onclick="selectTitleOption(${selectedSlideIdx}, ${i})">${escHtml(t)}</button>`).join('')
+  } else if (optsWrap) {
+    optsWrap.style.display = 'none'
+  }
+
+  const regenBtn    = document.getElementById('btn-regen-img')
+  const rerenderBtn = document.getElementById('btn-rerender')
+  const dlBtn       = document.getElementById('btn-dl-current')
+  if (regenBtn)    regenBtn.disabled    = false
+  if (rerenderBtn) rerenderBtn.disabled = false
+  if (dlBtn)       dlBtn.disabled       = !png
+
+  document.getElementById('btn-nav-prev').disabled = selectedSlideIdx <= 0
+  document.getElementById('btn-nav-next').disabled = selectedSlideIdx >= totalSlides - 1
+}
+
+function navSlide(dir) {
+  const next = selectedSlideIdx + dir
+  if (next >= 0 && next < totalSlides) selectSlide(next)
+}
+
+function stripMd(text) {
+  return (text || '')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/^[-*+]\s+/gm, '')
+    .replace(/^>\s+/gm, '')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .trim()
+}
+
+function selectTitleOption(idx, optIdx) {
+  const slide = slidesData[idx]
+  if (!slide || !slide.title_options) return
+  const chosen = slide.title_options[optIdx]
+  slidesData[idx] = { ...slide, title: chosen }
+  const titleEl = document.getElementById('edit-title')
+  if (titleEl) titleEl.value = chosen
+  // Highlight selected option
+  document.querySelectorAll('.title-opt-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', i === optIdx)
+  })
+}
+
+async function rerenderCurrentSlide() {
+  if (selectedSlideIdx < 0) return
+  const slide = slidesData[selectedSlideIdx]
+  if (!slide) return
+  const title   = document.getElementById('edit-title')?.value ?? slide.title
+  const body    = document.getElementById('edit-body')?.value  ?? slide.body
+  const updated = { ...slide, title, body }
+  slidesData[selectedSlideIdx] = updated
+  const btn = document.getElementById('btn-rerender')
+  if (btn) { btn.disabled = true; btn.textContent = '…' }
+  try {
+    const png = await renderSlideToCanvas(updated, getCurrentTheme())
+    renderedPngs[selectedSlideIdx] = png
+    updateGallerySlot(selectedSlideIdx + 1, png, updated)
+    updateEditor()
+    appendLog('render', `Slide ${selectedSlideIdx + 1} re-rendered`)
+  } catch (e) { showToast('Render failed: ' + e.message) }
+  if (btn) { btn.disabled = false; btn.textContent = 'Re-render' }
+}
+
+async function regenCurrentImage() {
+  if (selectedSlideIdx < 0) return
+  const slide = slidesData[selectedSlideIdx]
+  if (!slide) return
+  const btn = document.getElementById('btn-regen-img')
+  if (btn) { btn.disabled = true; btn.textContent = '…' }
+  try {
+    const lock = Math.floor(Math.random() * 9000) + 1000
+    const res  = await fetch('/api/regenerate-image', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: slide.image_prompt || slide.title, slide_index: slide.slide_index || (selectedSlideIdx + 1), topic: currentTopic, lock }),
+    })
+    if (!res.ok) throw new Error(await res.text())
+    const { url } = await res.json()
+    if (url) {
+      const updated = { ...slide, image_url: url }
+      slidesData[selectedSlideIdx] = updated
+      const png = await renderSlideToCanvas(updated, getCurrentTheme())
+      renderedPngs[selectedSlideIdx] = png
+      updateGallerySlot(selectedSlideIdx + 1, png, updated)
+      updateEditor()
+      appendLog('imgprog', `New image for slide ${selectedSlideIdx + 1}`)
+    }
+  } catch (err) { showToast('Regen failed: ' + err.message) }
+  if (btn) { btn.disabled = false; btn.textContent = '↺ New Image' }
+}
+
+function downloadCurrentSlide() {
+  if (selectedSlideIdx >= 0) downloadSlide(selectedSlideIdx)
+}
+
+// ── Gallery ────────────────────────────────────────────────────────
+function initGallery(total) {
+  totalSlides = total; doneCount = 0
+  slidesData  = new Array(total).fill(null)
+  renderedPngs= new Array(total).fill(null)
+  selectedSlideIdx = -1
+  document.getElementById('gallery-total').textContent = total
+  document.getElementById('gallery-done').textContent  = '0'
+  document.getElementById('btn-dl-all').style.display  = 'none'
+  hideSkeleton()
+  document.getElementById('gallery-area').style.display = 'block'
+  const grid = document.getElementById('gallery-grid')
+  grid.innerHTML = Array.from({ length: total }, (_, i) => `
+    <div class="gallery-slot" id="gslot-${i+1}" onclick="selectSlide(${i})">
+      <div class="gallery-slot-shimmer">
+        <div class="slot-num">${String(i+1).padStart(2,'0')}</div>
+        <div class="slot-progress-wrap"><div class="slot-progress-fill"></div></div>
+        <div class="slot-status-lbl"></div>
+      </div>
+      <div class="slot-loading-bar"></div>
+    </div>`).join('')
+  updateEditor()
+}
+
+async function onSlideReady(slideNum, slideData) {
+  slidesData[slideNum - 1] = slideData
+  const slot = document.getElementById(`gslot-${slideNum}`)
+  if (slot) { slot.classList.remove('generating'); slot.classList.add('rendering') }
+  try {
+    const png = await renderSlideToCanvas(slideData, getCurrentTheme())
+    renderedPngs[slideNum - 1] = png
+    updateGallerySlot(slideNum, png, slideData)
+  } catch (e) { if (slot) slot.classList.add('ready') }
+  doneCount++
+  document.getElementById('gallery-done').textContent = doneCount
+  if (doneCount >= totalSlides) document.getElementById('btn-dl-all').style.display = 'block'
+  if (selectedSlideIdx === slideNum - 1) updateEditor()
+}
+
+function updateGallerySlot(slideNum, pngUrl, slideData) {
+  const slot = document.getElementById(`gslot-${slideNum}`)
+  if (!slot) return
+  const isSelected = selectedSlideIdx === slideNum - 1
+  const title = escHtml((slideData.title || '').slice(0, 50))
+  slot.innerHTML = `
+    <img src="${escAttr(pngUrl)}" alt="Slide ${slideNum}">
+    <div class="slot-badge">${String(slideNum).padStart(2,'0')}</div>
+    <div class="gallery-slot-overlay">
+      <span class="gallery-slot-title">${title}</span>
+      <button class="btn-dl-slot" onclick="event.stopPropagation();downloadSlide(${slideNum-1})">PNG</button>
+    </div>
+    <div class="slot-loading-bar"></div>`
+  slot.onclick = () => selectSlide(slideNum - 1)
+  slot.classList.remove('generating','rendering')
+  slot.classList.add('ready')
+  if (isSelected) slot.classList.add('selected')
+}
+
+async function reapplyTheme() {
+  if (!slidesData.some(s => s)) return
+  const btn = document.getElementById('btn-retheme')
+  btn.textContent = '…'; btn.disabled = true
+  doneCount = 0
+  document.getElementById('gallery-done').textContent = '0'
+  document.getElementById('btn-dl-all').style.display = 'none'
+  const theme = getCurrentTheme()
+  await Promise.all(slidesData.map(async (slide, i) => {
+    if (!slide) return
+    const slot = document.getElementById(`gslot-${i+1}`)
+    if (slot) slot.classList.add('rendering')
+    try {
+      const png = await renderSlideToCanvas(slide, theme)
+      renderedPngs[i] = png
+      updateGallerySlot(i + 1, png, slide)
+      doneCount++
+      document.getElementById('gallery-done').textContent = doneCount
+    } catch {}
+  }))
+  if (doneCount >= slidesData.filter(Boolean).length) document.getElementById('btn-dl-all').style.display = 'block'
+  if (selectedSlideIdx >= 0) updateEditor()
+  btn.textContent = '↺ Apply'; btn.disabled = false
+}
+
+function downloadSlide(idx) {
+  if (!renderedPngs[idx]) { showToast('Not ready yet'); return }
+  downloadPng(renderedPngs[idx], `carousel-slide-${idx+1}.png`)
+}
+
+async function downloadAll() {
+  const ready = renderedPngs.filter(Boolean)
+  if (!ready.length) { showToast('No images ready'); return }
+  for (let i = 0; i < renderedPngs.length; i++) {
+    if (renderedPngs[i]) { downloadPng(renderedPngs[i], `carousel-slide-${i+1}.png`); await new Promise(r => setTimeout(r, 120)) }
+  }
+  showToast(`Downloaded ${ready.length} PNG files`)
+}
+
+function downloadPng(dataUrl, filename) {
+  const a = document.createElement('a')
+  a.href = dataUrl; a.download = filename
+  document.body.appendChild(a); a.click(); document.body.removeChild(a)
+}
+
+// ── Projects ──────────────────────────────────────────────────────
+const PROJECTS_KEY = 'carouselflow_projects'
+const MAX_PROJECTS = 10
+
+function getProjects() {
+  try { return JSON.parse(localStorage.getItem(PROJECTS_KEY) || '[]') } catch { return [] }
+}
+
+function saveProject() {
+  if (!slidesData.some(Boolean)) { showToast('No slides to save'); return }
+  const topic = document.getElementById('inp-topic').value.trim() || 'Untitled'
+  // renderedPngs are large canvas PNGs — exclude them, re-render on load instead
+  const proj  = { id:`proj_${Date.now()}`, topic, theme:currentThemeId, slidesData:[...slidesData], savedAt:new Date().toISOString() }
+  const projects = getProjects()
+  const existing = projects.findIndex(p => p.topic === topic)
+  if (existing >= 0) projects.splice(existing, 1)
+  projects.unshift(proj)
+  if (projects.length > MAX_PROJECTS) projects.splice(MAX_PROJECTS)
+  try {
+    localStorage.setItem(PROJECTS_KEY, JSON.stringify(projects))
+  } catch {
+    showToast('Storage full — try deleting old projects'); return
+  }
+  renderProjectList(); renderObProjectList()
+  switchLTab('projects')
+  showToast(`✓ Saved: "${topic}"`)
+}
+
+function loadProject(id) {
+  const proj = getProjects().find(p => p.id === id)
+  if (!proj) { showToast('Project not found'); return }
+  showApp()
+  currentThemeId   = proj.theme || 'dark-luxury'
+  const loadedSlides = proj.slidesData || []   // capture before initGallery resets slidesData
+  totalSlides      = loadedSlides.length
+  currentTopic     = proj.topic
+  selectedSlideIdx = -1
+  doneCount        = 0
+  document.getElementById('inp-topic').value          = proj.topic
+  document.getElementById('app-topic-label').textContent = proj.topic
+  selectTheme(currentThemeId)
+  initGallery(totalSlides)
+  // Re-render each slide from saved data (initGallery resets the global slidesData, so use loadedSlides)
+  loadedSlides.forEach((slide, i) => { if (slide) onSlideReady(i + 1, slide) })
+  document.getElementById('btn-retheme').style.display  = 'block'
+  document.getElementById('btn-save-hdr').style.display = 'block'
+  showToast(`Loaded: "${proj.topic}"`)
+  switchLTab('pipeline')
+}
+
+function deleteProject(id) {
+  const projects = getProjects().filter(p => p.id !== id)
+  localStorage.setItem(PROJECTS_KEY, JSON.stringify(projects))
+  renderProjectList(); renderObProjectList()
+  showToast('Project deleted')
+}
+
+function renderProjectList() {
+  const projects = getProjects()
+  const list = document.getElementById('project-list')
+  if (!list) return
+  if (!projects.length) { list.innerHTML = '<div class="proj-panel-empty">No saved projects yet</div>'; return }
+  list.innerHTML = projects.map(p => {
+    const d = new Date(p.savedAt)
+    const date = `${d.toLocaleDateString(undefined,{month:'short',day:'numeric'})} ${d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'})}`
+    const count = (p.slidesData || []).filter(Boolean).length
+    return `<div class="proj-panel-item">
+      <div class="proj-panel-title">${escHtml(p.topic)}</div>
+      <div class="proj-panel-meta">${count} slides · ${escHtml(date)}</div>
+      <div class="proj-panel-actions">
+        <button class="btn-proj-act" onclick="loadProject('${p.id}')">↩ Load</button>
+        <button class="btn-proj-act del" onclick="deleteProject('${p.id}')">Delete</button>
+      </div>
+    </div>`
+  }).join('')
+}
+
+function renderObProjectList() {
+  const projects = getProjects()
+  const list = document.getElementById('ob-proj-list')
+  if (!list) return
+  if (!projects.length) { list.innerHTML = '<div class="ob-proj-empty">No saved projects yet</div>'; return }
+  list.innerHTML = projects.map(p => {
+    const d = new Date(p.savedAt)
+    const date = `${d.toLocaleDateString(undefined,{month:'short',day:'numeric'})}`
+    const count = (p.slidesData || []).filter(Boolean).length
+    return `<div class="ob-proj-item">
+      <div class="ob-proj-info">
+        <div class="ob-proj-title">${escHtml(p.topic)}</div>
+        <div class="ob-proj-meta">${count} slides · ${escHtml(date)}</div>
+      </div>
+      <button class="ob-proj-load" onclick="loadProject('${p.id}')">Load</button>
+    </div>`
+  }).join('')
+}
+
+// ── Canvas renderer ────────────────────────────────────────────────
+async function renderSlideToCanvas(slide, theme) {
+  await fontReady
+  const W = 1080, H = 1350
+  const canvas = document.createElement('canvas')
+  canvas.width = W; canvas.height = H
+  const ctx = canvas.getContext('2d')
+  const bg = theme.bg || '#0D0D0D', primary = theme.primary || '#4F6EF7'
+  const tc = theme.text || '#FFFFFF', mc = theme.muted || '#9CA3AF'
+  const ff = theme.font || 'Inter, system-ui, sans-serif', ovOp = theme.ovOp ?? 0.5
+
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H)
+
+  if (slide.image_url) {
+    try {
+      const img = await loadImage(slide.image_url)
+      const scale = Math.max(W / img.width, H / img.height)
+      const sw = img.width * scale, sh = img.height * scale
+      ctx.drawImage(img, (W - sw) / 2, (H - sh) / 2, sw, sh)
+    } catch {}
+  }
+
+  const isLight = isLightColor(bg)
+  if (isLight && slide.image_url) {
+    const lv = ctx.createLinearGradient(0, 0, 0, H)
+    lv.addColorStop(0,   `rgba(255,255,255,${(ovOp * 0.8).toFixed(2)})`)
+    lv.addColorStop(0.5, `rgba(255,255,255,${(ovOp * 0.65).toFixed(2)})`)
+    lv.addColorStop(1,   `rgba(255,255,255,${Math.min(ovOp * 0.9, 0.90).toFixed(2)})`)
+    ctx.fillStyle = lv; ctx.fillRect(0, 0, W, H)
+  } else {
+    const ov = ctx.createLinearGradient(0, 0, 0, H)
+    ov.addColorStop(0,    `rgba(0,0,0,${(ovOp * 0.80).toFixed(2)})`)
+    ov.addColorStop(0.12, `rgba(0,0,0,${(ovOp * 0.88).toFixed(2)})`)
+    ov.addColorStop(0.65, `rgba(0,0,0,${(ovOp * 0.90).toFixed(2)})`)
+    ov.addColorStop(1,    `rgba(0,0,0,${Math.min(ovOp + 0.30, 0.96).toFixed(2)})`)
+    ctx.fillStyle = ov; ctx.fillRect(0, 0, W, H)
+  }
+
+  const slideNum = slide.slide_index || 1
+  ctx.fillStyle = primary + 'cc'
+  ctx.font = `700 34px ${ff}`
+  ctx.fillText(`${String(slideNum).padStart(2,'0')} / ${String(totalSlides).padStart(2,'0')}`, 80, 100)
+  ctx.fillStyle = primary; ctx.fillRect(80, 122, 100, 5)
+
+  ctx.fillStyle = tc
+  const titleText = stripMd(slide.title || '').toUpperCase()
+  const tfSize = titleText.length > 80 ? 60 : titleText.length > 60 ? 70 : titleText.length > 40 ? 82 : 94
+  ctx.font = `800 ${tfSize}px ${ff}`
+  const titleEndY = wrapText(ctx, titleText, 80, 210, W - 160, tfSize * 1.18, 6)
+
+  const divY = Math.max(titleEndY + 18, 580)
+  ctx.fillStyle = primary + '55'; ctx.fillRect(80, divY, 80, 3)
+
+  ctx.fillStyle = mc; ctx.font = `400 44px ${ff}`
+  wrapText(ctx, stripMd(slide.body || ''), 80, divY + 60, W - 160, 64, 5)
+
+  ctx.fillStyle = !isLightColor(bg) ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.35)'
+  ctx.fillRect(0, H - 150, W, 150)
+  ctx.fillStyle = primary; ctx.font = `700 36px ${ff}`; ctx.textAlign = 'left'
+  ctx.fillText('@CarouselFlow AI', 80, H - 78)
+  ctx.fillStyle = mc + 'aa'; ctx.font = `500 30px ${ff}`; ctx.textAlign = 'right'
+  ctx.fillText('SWIPE →', W - 80, H - 78); ctx.textAlign = 'left'
+
+  return canvas.toDataURL('image/png')
+}
+
+function wrapText(ctx, text, x, startY, maxW, lineH, maxLines = 8) {
+  const words = (text || '').split(' '); let line = '', y = startY, count = 0
+  for (let i = 0; i < words.length; i++) {
+    const test = line ? line + ' ' + words[i] : words[i]
+    if (ctx.measureText(test).width > maxW && line) {
+      ctx.fillText(line, x, y); y += lineH; count++; line = words[i]
+      if (count >= maxLines) { ctx.fillText(line + '…', x, y); return y + lineH }
+    } else { line = test }
+  }
+  if (line) { ctx.fillText(line, x, y); y += lineH }
+  return y
+}
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image(); img.crossOrigin = 'anonymous'
+    img.onload = () => resolve(img); img.onerror = reject; img.src = src
+  })
+}
+
+function isLightColor(hex) {
+  const c = hex.replace('#','')
+  if (c.length < 6) return false
+  const r = parseInt(c.slice(0,2),16), g = parseInt(c.slice(2,4),16), b = parseInt(c.slice(4,6),16)
+  return (r * 299 + g * 587 + b * 114) / 1000 > 128
+}
+
+// ── Theme picker ───────────────────────────────────────────────────
+function getCurrentTheme() { return THEMES.find(t => t.id === currentThemeId) || THEMES[0] }
+
+function initThemePicker() {
+  // App theme chips
+  const chips = document.getElementById('theme-chips')
+  if (chips) {
+    chips.innerHTML = THEMES.map(t => `
+      <button class="theme-chip ${t.id === currentThemeId ? 'selected' : ''}" data-theme="${t.id}" onclick="selectTheme('${t.id}')">
+        <span class="theme-dot" style="background:${t.primary};border:1px solid rgba(0,0,0,.15)"></span>
+        ${escHtml(t.name)}
+      </button>`).join('')
+  }
+  // Onboard theme grid
+  const ob = document.getElementById('ob-theme-chips')
+  if (ob) {
+    ob.innerHTML = THEMES.map(t => `
+      <button class="ob-theme-btn ${t.id === currentThemeId ? 'selected' : ''}" data-theme="${t.id}" onclick="selectTheme('${t.id}')">
+        <span class="ob-theme-dot" style="background:${t.primary};border:1px solid rgba(0,0,0,.15)"></span>
+        ${escHtml(t.name)}
+      </button>`).join('')
+  }
+}
+
+function selectTheme(id) {
+  currentThemeId = id
+  document.querySelectorAll('[data-theme]').forEach(c => c.classList.toggle('selected', c.dataset.theme === id))
+  const hasSlidesReady = slidesData.some(Boolean)
+  const rt = document.getElementById('btn-retheme')
+  if (rt) rt.style.display = hasSlidesReady ? 'block' : 'none'
+}
+
+// ── SSE event handler ──────────────────────────────────────────────
+function handleEvent(evt) {
+  switch (evt.type) {
+    case 'pipeline_start':
+      agentsDone = 0; setProgress(4)
+      appendLog('start', `Pipeline started — "${evt.topic}"`)
+      break
+
+    case 'agent_start': {
+      setNode(evt.agent, 'active')
+      appendLog('start', `${fmtAgent(evt.agent)} running`)
+      if (evt.agent === 'image_gen') initGallery(totalSlides)
+      const skLabel = { research:'Research Agent…', style_reference:'Style Reference…', design:'Claude designing layout…', brand:'Brand Agent…', copywriting:'Copywriting…', carousel_engine:'Assembling carousel…' }
+      const lbl = skLabel[evt.agent]
+      if (lbl) { const el = document.getElementById('skeleton-label'); if (el) el.textContent = lbl }
+      break
+    }
+
+    case 'thinking':
+      setNode(evt.agent, 'active', evt.content)
+      appendLog('think', evt.content)
+      break
+
+    case 'agent_done':
+      setNode(evt.agent, 'done', '', evt.duration_ms)
+      agentsDone++
+      setProgress(Math.min(4 + agentsDone * 13, 88))
+      appendLog('done', `${fmtAgent(evt.agent)} done (${evt.duration_ms}ms)`)
+      agentTimings.push({ agent: evt.agent.replace(/_/g,' '), ms: evt.duration_ms || 0 })
+      if (evt.agent === 'design' && evt.data) designSpec = evt.data
+      break
+
+    case 'agent_error':
+      setNode(evt.agent, 'error', evt.error)
+      appendLog('error', `${fmtAgent(evt.agent)}: ${evt.error}`)
+      break
+
+    case 'image_progress': {
+      const slot = document.getElementById(`gslot-${evt.slide}`)
+      if (evt.status === 'generating') {
+        if (slot) slot.classList.add('generating')
+        appendLog('imgprog', `Slide ${evt.slide}/${evt.total} generating image…`)
+      } else if (evt.status === 'done' && evt.slide_data) {
+        appendLog('render', `Slide ${evt.slide}/${evt.total} rendering…`)
+        onSlideReady(evt.slide, evt.slide_data).then(() => { appendLog('done', `Slide ${evt.slide}/${evt.total} ready`) })
+      }
+      break
+    }
+
+    case 'carousel_ready': {
+      setProgress(98)
+      setNode('analytics', 'done', '', 0)
+      const n = (evt.slides || []).length
+      appendLog('ready', `Carousel ready — ${n} slides in ${evt.duration_ms}ms`)
+      if (evt.designSpec) designSpec = evt.designSpec
+      document.getElementById('btn-retheme').style.display = 'block'
+      document.getElementById('btn-save-hdr').style.display = 'block'
+      break
+    }
+
+    case 'done':
+      setProgress(100)
+      appendLog('done', 'Pipeline complete')
+      break
+
+    case 'error':
+      appendLog('error', evt.message)
+      break
+  }
+}
+
+// ── Image upload ───────────────────────────────────────────────────
+function onFileSelect(e) {
+  const file = e.target.files[0]
+  if (!file) return
+  if (file.size > 5 * 1024 * 1024) { showToast('Image too large (max 5 MB)'); return }
+  processFile(file)
+}
+
+function processFile(file) {
+  const reader = new FileReader()
+  reader.onload = (ev) => {
+    referenceImage = ev.target.result
+    // Onboarding preview
+    const obPrev = document.getElementById('ref-preview')
+    const obThumb = document.getElementById('ref-thumb')
+    const obName = document.getElementById('ref-name')
+    if (obPrev && obThumb && obName) {
+      obThumb.src = referenceImage
+      obName.textContent = file.name.length > 24 ? file.name.slice(0,22)+'…' : file.name
+      obPrev.classList.add('show')
+    }
+    const uploadRow = document.getElementById('upload-row')
+    if (uploadRow) uploadRow.classList.add('has-file')
+    // App preview
+    const appPrev  = document.getElementById('ref-preview-app')
+    const appThumb = document.getElementById('ref-thumb-app')
+    const appName  = document.getElementById('ref-name-app')
+    if (appPrev && appThumb && appName) {
+      appThumb.src = referenceImage
+      appName.textContent = file.name.length > 20 ? file.name.slice(0,18)+'…' : file.name
+      appPrev.classList.add('show')
+    }
+    const btnUpload = document.getElementById('btn-upload')
+    if (btnUpload) { btnUpload.classList.add('has-file'); btnUpload.textContent = '✓ Ref' }
+    const hint = document.getElementById('upload-hint')
+    if (hint) hint.textContent = 'Claude will analyse for layout design'
+  }
+  reader.readAsDataURL(file)
+}
+
+function handleDrop(e) {
+  e.preventDefault()
+  const zone = e.currentTarget
+  zone.classList.remove('drag-over')
+  const f = e.dataTransfer.files[0]
+  if (f && f.type.startsWith('image/')) processFile(f)
+}
+
+function clearRef() {
+  referenceImage = null
+  const fi = document.getElementById('file-input'); if (fi) fi.value = ''
+  const obPrev = document.getElementById('ref-preview'); if (obPrev) obPrev.classList.remove('show')
+  const uploadRow = document.getElementById('upload-row'); if (uploadRow) uploadRow.classList.remove('has-file')
+  const appPrev = document.getElementById('ref-preview-app'); if (appPrev) appPrev.classList.remove('show')
+  const btnUpload = document.getElementById('btn-upload'); if (btnUpload) { btnUpload.classList.remove('has-file'); btnUpload.textContent = '+ Style Ref' }
+  const hint = document.getElementById('upload-hint'); if (hint) hint.textContent = 'Claude analyses it for layout design'
+}
+
+// ── Run / Generate / Reset ─────────────────────────────────────────
+function runDemo() {
+  const demoTopic = 'Founder lessons from NYC networking'
+  const obT = document.getElementById('ob-topic'); if (obT) obT.value = demoTopic
+  document.getElementById('inp-topic').value = demoTopic
+  showApp()
+  startGenerate()
+}
+
+async function startGenerate() {
+  const topic = document.getElementById('inp-topic').value.trim()
+  if (!topic || running) return
+  currentTopic = topic
+  running = true; agentTimings = []; designSpec = null; totalSlides = 6
+  const btnRun = document.getElementById('btn-run'); if (btnRun) btnRun.disabled = true
+  const btnGen = document.getElementById('btn-gen'); if (btnGen) btnGen.disabled = true
+  const btnGenerate = document.getElementById('btn-generate'); if (btnGenerate) btnGenerate.disabled = true
+  document.getElementById('btn-retheme').style.display = 'none'
+  document.getElementById('btn-save-hdr').style.display = 'none'
+  document.getElementById('app-topic-label').textContent = topic
+  resetNodes(); clearLogs(); setProgress(0); showSkeleton(); selectedSlideIdx = -1; updateEditor()
+
+  try {
+    const res = await fetch('/api/generate-carousel', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topic, slide_count:6, reference_image: referenceImage||undefined, style: currentThemeId, content_notes: contentNotes||undefined }),
+    })
+    const reader = res.body.getReader(); const decoder = new TextDecoder(); let buf = ''
+    while (true) {
+      const { done, value } = await reader.read(); if (done) break
+      buf += decoder.decode(value, { stream:true })
+      const lines = buf.split('\n'); buf = lines.pop()
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue
+        try { handleEvent(JSON.parse(line.slice(6))) } catch {}
+      }
+    }
+  } catch (err) { hideSkeleton(); appendLog('error', `Connection error: ${err.message}`) }
+
+  running = false
+  if (btnRun) btnRun.disabled = false
+  if (btnGen) btnGen.disabled = false
+  if (btnGenerate) btnGenerate.disabled = false
+}
+
+function resetAll() {
+  if (running) return
+  agentTimings=[]; designSpec=null; slidesData=[]; renderedPngs=[]; selectedSlideIdx=-1; currentTopic=''; contentNotes=''
+  const cr = document.getElementById('inp-content-ref'); if (cr) cr.value = ''
+  resetNodes(); clearLogs(); setProgress(0); hideSkeleton()
+  document.getElementById('gallery-area').style.display = 'none'
+  document.getElementById('empty-state').style.display  = 'flex'
+  document.getElementById('btn-retheme').style.display  = 'none'
+  document.getElementById('btn-save-hdr').style.display = 'none'
+  document.getElementById('log-entries').innerHTML = '<div style="padding:14px 4px;font-family:var(--font-mono);font-size:9px;color:var(--muted-fg);text-transform:uppercase;letter-spacing:.08em">Waiting for pipeline…</div>'
+  updateEditor()
+}
+
+// ── Keyboard shortcuts ─────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  const tag = document.activeElement.tagName
+  if (tag === 'INPUT' || tag === 'TEXTAREA') return
+  if (e.key === 'ArrowLeft')  navSlide(-1)
+  if (e.key === 'ArrowRight') navSlide(1)
+  if (e.key === 'r' && !running && !e.ctrlKey && !e.metaKey) runDemo()
+})
+
+// ── Utilities ──────────────────────────────────────────────────────
+function fmtAgent(s) { return s.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase()) }
+function escHtml(s)  { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') }
+function escAttr(s)  { return String(s||'').replace(/"/g,'&quot;').replace(/'/g,'&#39;') }
+function showToast(msg, ms=2500) {
+  const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show')
+  setTimeout(() => t.classList.remove('show'), ms)
+}
+
+// ── Init ───────────────────────────────────────────────────────────
+window.addEventListener('load', async () => {
+  initThemePicker()
+  renderObProjectList()
+  renderProjectList()
+  try {
+    const r = await fetch('/api/health'); const d = await r.json()
+    if (!d.demo) {/* production mode indicator if needed */}
+  } catch {}
+})
+</script>
+</body>
+</html>

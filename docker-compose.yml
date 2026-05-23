@@ -1,0 +1,73 @@
+version: "3.9"
+
+services:
+
+  # ── ClickHouse ──────────────────────────────────────────────────
+  clickhouse:
+    image: clickhouse/clickhouse-server:24-alpine
+    ports:
+      - "8123:8123"   # HTTP API
+      - "9000:9000"   # Native protocol
+    environment:
+      CLICKHOUSE_DB: carouselflow
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "1"
+    volumes:
+      - ch_data:/var/lib/clickhouse
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8123/ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ── Datadog Agent ───────────────────────────────────────────────
+  datadog-agent:
+    image: gcr.io/datadoghq/agent:latest
+    environment:
+      DD_API_KEY: ${DD_API_KEY:-}
+      DD_SITE: datadoghq.com
+      DD_APM_ENABLED: "true"
+      DD_APM_NON_LOCAL_TRAFFIC: "true"
+      DD_DOGSTATSD_NON_LOCAL_TRAFFIC: "true"
+      DD_LOGS_ENABLED: "true"
+      DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL: "true"
+    ports:
+      - "8126:8126/tcp"   # APM
+      - "8125:8125/udp"   # DogStatsD
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /proc/:/host/proc/:ro
+
+  # ── CarouselFlow AI Server ──────────────────────────────────────
+  server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      CLICKHOUSE_URL: http://clickhouse:8123
+      CLICKHOUSE_DB: carouselflow
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: ""
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://generativelanguage.googleapis.com/v1beta/openai/}
+      LLM_MODEL: ${LLM_MODEL:-gemini-2.0-flash}
+      DD_SERVICE: carouselflow-ai
+      DD_ENV: production
+      DATADOG_AGENT_HOST: datadog-agent
+      DEMO_MODE: ${DEMO_MODE:-true}
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+    volumes:
+      - ./server:/app/server
+      - ./agents:/app/agents
+      - ./sponsor:/app/sponsor
+      - ./website:/app/website
+      - /app/server/node_modules
+
+volumes:
+  ch_data:
