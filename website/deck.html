@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CarouselFlow AI — Demo Deck</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,300&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0D0D0D;--bg2:#111111;--accent:#4F6EF7;--accent2:#7B93FA;
+  --fg:#FFFFFF;--muted:#9CA3AF;--border:rgba(255,255,255,.07);
+  --mono:'JetBrains Mono',monospace;--sans:'Inter',system-ui,sans-serif;
+}
+
+html,body{width:100%;height:100%;background:var(--bg);color:var(--fg);font-family:var(--sans);overflow:hidden}
+
+/* ── Deck shell ───────────────────────────────────────────── */
+#deck{width:100%;height:100%;position:relative}
+
+/* Progress bar */
+#progress{position:fixed;top:0;left:0;height:2px;background:var(--accent);transition:width .4s ease;z-index:100}
+
+/* Slide counter + timestamp */
+#hud{
+  position:fixed;bottom:24px;right:32px;
+  display:flex;align-items:center;gap:16px;z-index:100
+}
+.hud-ts{font-family:var(--mono);font-size:11px;color:var(--accent);opacity:.7;letter-spacing:.06em}
+.hud-count{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.06em}
+
+/* Nav arrows */
+#nav-prev,#nav-next{
+  position:fixed;top:50%;transform:translateY(-50%);
+  width:44px;height:44px;border-radius:50%;border:1px solid var(--border);
+  background:rgba(255,255,255,.04);color:var(--muted);
+  font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  z-index:100;transition:all .15s;user-select:none
+}
+#nav-prev{left:20px}
+#nav-next{right:20px}
+#nav-prev:hover,#nav-next:hover{background:rgba(255,255,255,.1);color:var(--fg)}
+
+/* ── Base slide ───────────────────────────────────────────── */
+.slide{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:60px 80px;
+  opacity:0;pointer-events:none;
+  transition:opacity .5s ease, transform .5s ease;
+  transform:translateY(18px);
+}
+.slide.active{opacity:1;pointer-events:auto;transform:translateY(0)}
+.slide.out{opacity:0;transform:translateY(-18px)}
+
+/* ── Slide label / timestamp ──────────────────────────────── */
+.slide-label{
+  position:absolute;top:28px;left:36px;
+  font-family:var(--mono);font-size:10px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--accent);opacity:.6
+}
+
+/* ── Type scale ───────────────────────────────────────────── */
+.t-eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:20px}
+.t-display{font-size:clamp(48px,6vw,88px);font-weight:800;line-height:1.05;letter-spacing:-.03em}
+.t-headline{font-size:clamp(32px,4vw,58px);font-weight:700;line-height:1.1;letter-spacing:-.025em}
+.t-subhead{font-size:clamp(18px,2vw,26px);font-weight:300;color:var(--muted);line-height:1.5;max-width:680px;margin-top:24px}
+.t-body{font-size:16px;font-weight:400;color:var(--muted);line-height:1.7;max-width:640px}
+.t-accent{color:var(--accent)}
+.t-white{color:var(--fg)}
+.t-center{text-align:center}
+.t-bold{font-weight:700;color:var(--fg)}
+
+/* ── Divider ──────────────────────────────────────────────── */
+.rule{width:48px;height:2px;background:var(--accent);margin:28px 0;flex-shrink:0}
+.rule.center{margin:28px auto}
+
+/* ── Cards / grid ─────────────────────────────────────────── */
+.card{
+  background:rgba(255,255,255,.04);border:1px solid var(--border);
+  border-radius:10px;padding:24px 28px
+}
+.card-grid{display:grid;gap:16px;width:100%;max-width:900px}
+.card-grid-2{grid-template-columns:1fr 1fr}
+.card-grid-3{grid-template-columns:1fr 1fr 1fr}
+.card-grid-4{grid-template-columns:1fr 1fr 1fr 1fr}
+
+/* ── Pipeline ─────────────────────────────────────────────── */
+.pipeline{display:flex;align-items:center;gap:0;width:100%;max-width:960px;margin-top:12px}
+.pipe-node{
+  flex:1;background:rgba(79,110,247,.08);border:1px solid rgba(79,110,247,.25);
+  border-radius:8px;padding:14px 10px;text-align:center;position:relative
+}
+.pipe-num{font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:.1em;margin-bottom:6px}
+.pipe-name{font-size:12px;font-weight:600;color:var(--fg);margin-bottom:4px;line-height:1.2}
+.pipe-tag{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:.06em}
+.pipe-arrow{width:28px;flex-shrink:0;text-align:center;color:var(--accent);font-size:14px;opacity:.5}
+
+/* ── Angle chips ──────────────────────────────────────────── */
+.angle-chip{
+  border:1px solid var(--border);border-radius:8px;padding:18px 20px;
+  display:flex;flex-direction:column;gap:6px
+}
+.angle-label{font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:.12em;text-transform:uppercase}
+.angle-text{font-size:14px;font-weight:500;color:var(--fg);line-height:1.4}
+
+/* ── Title options ────────────────────────────────────────── */
+.title-btn{
+  border:1px solid var(--border);border-radius:6px;padding:12px 16px;
+  font-size:14px;font-weight:500;color:var(--fg);text-align:left;
+  background:rgba(255,255,255,.03);cursor:default;margin-bottom:8px;
+  display:flex;align-items:center;gap:12px
+}
+.title-btn .tb-num{font-family:var(--mono);font-size:9px;color:var(--accent);width:16px;flex-shrink:0}
+.title-btn.active{background:rgba(79,110,247,.15);border-color:rgba(79,110,247,.5)}
+
+/* ── Pain list ────────────────────────────────────────────── */
+.pain-list{list-style:none;width:100%;max-width:640px;margin-top:8px}
+.pain-list li{
+  display:flex;align-items:flex-start;gap:16px;
+  padding:14px 0;border-bottom:1px solid var(--border);font-size:18px;font-weight:300;color:var(--muted)
+}
+.pain-list li .pl-icon{font-size:14px;color:var(--accent);margin-top:3px;flex-shrink:0}
+.pain-list li .pl-time{font-family:var(--mono);font-size:11px;color:var(--accent);margin-left:auto;flex-shrink:0;margin-top:4px}
+
+/* ── Funnel ───────────────────────────────────────────────── */
+.funnel{display:flex;flex-direction:column;align-items:center;gap:0;width:100%;max-width:520px}
+.funnel-step{
+  width:100%;text-align:center;padding:18px 0;position:relative
+}
+.funnel-step:nth-child(1){background:rgba(79,110,247,.15);border:1px solid rgba(79,110,247,.3);border-radius:8px 8px 0 0;width:100%}
+.funnel-step:nth-child(3){background:rgba(79,110,247,.08);border:1px solid rgba(79,110,247,.2);width:80%;border-top:none}
+.funnel-step:nth-child(5){background:rgba(79,110,247,.18);border:1px solid rgba(79,110,247,.4);width:60%;border-top:none;border-radius:0 0 8px 8px}
+.funnel-arrow-row{font-size:18px;color:var(--accent);opacity:.5;line-height:1;padding:4px 0}
+.funnel-label{font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:.14em;text-transform:uppercase;margin-bottom:4px}
+.funnel-name{font-size:16px;font-weight:600;color:var(--fg)}
+.funnel-sub{font-size:12px;color:var(--muted);margin-top:2px}
+
+/* ── Stat row ─────────────────────────────────────────────── */
+.stat-row{display:flex;gap:48px;justify-content:center;margin-top:32px}
+.stat{text-align:center}
+.stat-num{font-size:clamp(40px,5vw,72px);font-weight:800;color:var(--accent);letter-spacing:-.04em;line-height:1}
+.stat-lbl{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-top:6px}
+
+/* ── Palette swatch ───────────────────────────────────────── */
+.swatch-row{display:flex;gap:12px;margin-top:16px}
+.swatch{width:40px;height:40px;border-radius:6px;border:1px solid var(--border)}
+
+/* ── Slide-specific ───────────────────────────────────────── */
+
+/* S1 Cover */
+#s1{background:radial-gradient(ellipse 60% 50% at 50% 50%, rgba(79,110,247,.12) 0%, transparent 70%)}
+.cover-logo{
+  width:56px;height:56px;border-radius:14px;
+  background:linear-gradient(135deg,#4F6EF7,#7B93FA);
+  display:flex;align-items:center;justify-content:center;
+  font-size:26px;font-weight:800;color:#fff;margin:0 auto 28px;
+  box-shadow:0 0 40px rgba(79,110,247,.4)
+}
+.cover-title{font-size:clamp(42px,5.5vw,72px);font-weight:800;letter-spacing:-.04em;text-align:center}
+.cover-sub{font-size:18px;font-weight:300;color:var(--muted);text-align:center;margin-top:16px;letter-spacing:.01em}
+.cover-badge{
+  margin-top:36px;display:inline-flex;align-items:center;gap:8px;
+  border:1px solid rgba(79,110,247,.35);border-radius:20px;
+  padding:8px 18px;font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:.1em
+}
+.cover-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+
+/* S4 Every single week — massive */
+#s4{background:var(--bg)}
+.punch-text{
+  font-size:clamp(56px,9vw,128px);font-weight:900;line-height:.95;
+  letter-spacing:-.05em;text-align:center
+}
+
+/* S5 Solution */
+#s5{background:radial-gradient(ellipse 50% 60% at 50% 50%, rgba(79,110,247,.1) 0%, transparent 70%)}
+
+/* S13 Close */
+#s13{background:radial-gradient(ellipse 60% 50% at 50% 50%, rgba(79,110,247,.1) 0%, transparent 70%)}
+
+/* S14 End */
+#s14{background:radial-gradient(ellipse 60% 50% at 50% 50%, rgba(79,110,247,.08) 0%, transparent 70%)}
+
+/* ── Mockup frame ─────────────────────────────────────────── */
+.mockup{
+  background:#141414;border:1px solid var(--border);border-radius:10px;
+  padding:16px;width:100%;max-width:760px;
+  box-shadow:0 24px 64px rgba(0,0,0,.6)
+}
+.mockup-bar{display:flex;gap:6px;margin-bottom:12px}
+.mockup-dot{width:9px;height:9px;border-radius:50%}
+.mockup-textarea{
+  background:rgba(255,255,255,.04);border:1px solid var(--border);
+  border-radius:6px;padding:14px;font-family:var(--mono);font-size:11px;
+  color:var(--muted);line-height:1.7;min-height:100px
+}
+.mockup-label{font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+
+<button id="nav-prev" onclick="go(-1)">←</button>
+<button id="nav-next" onclick="go(1)">→</button>
+
+<div id="hud">
+  <span class="hud-ts" id="hud-ts"></span>
+  <span class="hud-count" id="hud-count"></span>
+</div>
+
+<div id="deck">
+
+<!-- ══════════════════════════════════════════════════════════
+     S1 · COVER
+══════════════════════════════════════════════════════════ -->
+<section class="slide active" id="s1" data-ts="">
+  <div class="cover-logo">C</div>
+  <div class="cover-title">CarouselFlow <span class="t-accent">AI</span></div>
+  <div class="cover-sub">Seven AI Agents. One Carousel. Sixty Seconds.</div>
+  <div class="cover-badge">
+    <span class="cover-dot"></span>
+    Demo · 2 min 30 sec
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     S2 · PAIN — The Strategy Session
+══════════════════════════════════════════════════════════ -->
+<section class="slide" id="s2" data-ts="0:00">
+  <div class="slide-label">0:00 — Pain Point</div>
+
+  <div class="t-eyebrow">For Coaches, Consultants &amp; KOLs</div>
+  <div class="t-headline" style="max-width:720px">
+    You just wrapped a<br>
+    <span class="t-accent">two-hour strategy session.</span>
+  </div>
+  <div class="rule"></div>
+  <div class="t-subhead">
+    The insights were gold.<br>The frameworks were sharp.<br>
+    And now they're sitting in a Google Doc —&nbsp;<span class="t-bold">going nowhere.</span>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     S3 · PAIN — Hidden Content Tax
+══════════════════════════════════════════════════════════ -->
+<section class="slide" id="s3" data-ts="0:12">
+  <div class="slide-label">0:12 — The Hidden Cost</div>
+
+  <div class="t-eyebrow">Turning insights into content means</div>
+  <ul class="pain-list">
+    <li>
+      <span class="pl-icon">✦</span>
+      Rewriting your notes into readable prose
+      <span class="pl-time">~45 min</span>
+    </li>
+    <li>
+      <span class="pl-icon">✦</span>
+      Designing each slide in Canva or Figma
+      <span class="pl-time">~60 min</span>
+    </li>
+    <li>
+      <span class="pl-icon">✦</span>
+      Rewriting copy to match your brand voice
+      <span class="pl-time">~30 min</span>
+    </li>
+    <li>
+      <span class="pl-icon">✦</span>
+      Writing the hook, the CTA, the caption
+      <span class="pl-time">~30 min</span>
+    </li>
+  </ul>
+  <div class="t-body" style="margin-top:24px">
+    That's <span class="t-bold t-white">2–3 hours per post.</span> Before a single person sees it.
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     S4 · PAIN PUNCH — Every Single Week
+══════════════════════════════════════════════════════════ -->
+<section class="slide" id="s4" data-ts="0:25">
+  <div class="slide-label">0:25 — Impact</div>
+
+  <div class="punch-text">
+    Every.<br>
+    <span class="t-accent">Single.</span><br>
+    Week.
+  </div>
+  <div class="t-body t-center" style="margin-top:32px;max-width:520px">
+    Your knowledge is your product.<br>
+    But most of it <span class="t-bold t-white">never reaches your audience.</span>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     S5 · SOLUTION
+══════════════════════════════════════════════════════════ -->
+<section class="slide" id="s5" data-ts="0:30">
+  <div class="slide-label">0:30 — Solution</div>
+
+  <div class="cover-logo" style="margin-bottom:24px">C</div>
+  <div class="t-eyebrow t-center">Introducing</div>
+  <div class="t-display t-center">CarouselFlow <span class="t-accent">AI</span></div>
+  <div class="t-subhead t-center">
+    Paste your raw notes or meeting transcript.<br>
+    Get a fully designed, brand-consistent LinkedIn carousel.<br>
+    <strong style="color:#fff">Under sixty seconds.</strong>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     S6 · THE 7-AGENT PIPELINE
+══════════════════════════════════════════════════════════ -->
+<section class="slide" id="s6" data-ts="0:40">
+  <div class="slide-label">0:40 — How It Works</div>
+
+  <div class="t-eyebrow t-center">7-Agent AI Pipeline</div>
+  <div class="t-headline t-center" style="font-size:clamp(24px,3vw,40px);margin-bottom:28px">
+    Specialists that work in sequence, <span class="t-accent">in real time</span>
+  </div>
+
+  <div class="pipeline">
+    <div class="pipe-node">
+      <div class="pipe-num">01</div>
+      <div class="pipe-name">Research</div>
+      <div class="pipe-tag">Gemini</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-node">
+      <div class="pipe-num">02</div>
+      <div class="pipe-name">Style Ref</div>
+      <div class="pipe-tag">Gemini</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-node">
+      <div class="pipe-num">03</div>
+      <div class="pipe-name">Design</div>
+      <div class="pipe-tag">Claude</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-node">
+      <div class="pipe-num">04</div>
+      <div class="pipe-name">Brand</div>
+      <div class="pipe-tag">Gemini</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-node">
+      <div class="pipe-num">05</div>
+      <div class="pipe-name">Copy</div>
+      <div class="pipe-tag">Gemini</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-node">
+      <div class="pipe-num">06</div>
+      <div class="pipe-name">Engine</div>
+      <div class="pipe-tag">ClickHouse</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-node">
+      <div class="pipe-num">07</div>
+      <div class="pipe-name">Image Gen</div>
+      <div class="pipe-tag">Canvas</div>
+    </div>
+  </div>
+
+  <div class="t-body t-center" style="margin-top:24px">
+    Every step streams live — you watch it happen in real time.
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     S7 · DEMO — Paste Notes
+══════════════════════════════════════════════════════════ -->
+<section class="slide" id="s7" data-ts="0:48">
+  <div class="slide-label">0:48 — Demo · Step 1</div>
+
+  <div style="display:flex;gap:52px;align-items:flex-start;width:100%;max-width:900px">
+    <div style="flex:1">
+      <div class="t-eyebrow">Step 1</div>
+      <div class="t-headline" style="font-size:clamp(26px,3.2vw,44px)">
+        Paste your<br><span class="t-accent">raw notes.</span>
+      </div>
+      <div class="rule"></div>
+      <div class="t-body">
+        Meeting transcript. Bullet points. A voice memo dump. Any format works — the Research Agent reads it all and extracts what matters.
+      </div>
+    </div>
+    <div class="mockup" style="flex:1.1">
+      <div class="mockup-bar">
+        <div class="mockup-dot" style="background:#FF5F57"></div>
+        <div class="mockup-dot" style="background:#FFBD2E"></div>
+        <div class="mockup-dot" style="background:#28CA41"></div>
+      </div>
+      <div class="mockup-label">Content Reference</div>
+      <div class="mockup-textarea">
+        "In today's session we covered three core frameworks for habit formation — identity-based habits, environment design, and the two-minute rule. The biggest insight: most people fail not because of willpower but because of system design..."
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     S8 · DEMO — Topic Suggestions
+══════════════════════════════════════════════════════════ -->
+<section class="slide" id="s8" data-ts="1:00">
+  <div class="slide-label">1:00 — Demo · Step 2</div>
+
+  <div class="t-eyebrow t-center">AI reads your content and surfaces</div>
+  <div class="t-headline t-center" style="font-size:clamp(26px,3.2vw,44px);margin-bottom:28px">
+    4 optimised topic <span class="t-accent">angles</span>
+  </div>
+
+  <div class="card-grid card-grid-4" style="max-width:920px">
+    <div class="angle-chip">
+      <div class="angle-label">Direct</div>
+      <div class="angle-text">Why most people fail at building habits</div>
+    </div>
+    <div class="angle-chip" style="border-color:rgba(79,110,247,.4);background:rgba(79,110,247,.08)">
+      <div class="angle-label">Curiosity</div>
+      <div class="angle-text">What nobody tells you about building habits</div>
+    </div>
+    <div class="angle-chip">
+      <div class="angle-label">Lessons</div>
+      <div class="angle-text">5 lessons from identity-based habit design</div>
+    </div>
+    <div class="angle-chip">
+      <div class="angle-label">How-to</div>
+      <div class="angle-text">How to approach habit formation differently</div>
+    </div>
+  </div>
+
+  <div class="t-body t-center" style="margin-top:20px">
+    Pick one — or type your own. The full pipeline fires from here.
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     S9 · DEMO — Pipeline Fires
+══════════════════════════════════════════════════════════ -->
+<section class="slide" id="s9" data-ts="1:10">
+  <div class="slide-label">1:10 — Demo · Step 3</div>
+
+  <div style="display:flex;gap:52px;align-items:center;width:100%;max-width:900px">
+    <div style="flex:1">
+      <div class="t-eyebrow">One click</div>
+      <div class="t-headline" style="font-size:clamp(26px,3.2vw,44px)">
+        Watch 7 agents<br><span class="t-accent">fire in sequence.</span>
+      </div>
+      <div class="rule"></div>
+      <div class="t-body">
+        Every agent streams its result in real time. You see exactly what the AI is thinking — no black box.
+      </div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+      <div class="card" style="display:flex;align-items:center;gap:12px;padding:12px 16px">
+        <span style="font-family:var(--mono);font-size:9px;color:var(--accent)">✓ 847ms</span>
+        <span style="font-size:13px;font-weight:500">Research Agent</span>
+        <span style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-left:auto">Gemini</span>
+      </div>
+      <div class="card" style="display:flex;align-items:center;gap:12px;padding:12px 16px">
+        <span style="font-family:var(--mono);font-size:9px;color:var(--accent)">✓ 612ms</span>
+        <span style="font-size:13px;font-weight:500">Style Reference</span>
+        <span style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-left:auto">Gemini</span>
+      </div>
+      <div class="card" style="display:flex;align-items:center;gap:12px;padding:12px 16px">
+        <span style="font-family:var(--mono);font-size:9px;color:var(--accent)">✓ 734ms</span>
+        <span style="font-size:13px;font-weight:500">Design Agent</span>
+        <span style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-left:auto">Claude</span>
+      </div>
+      <div class="card" style="display:flex;align-items:center;gap:12px;padding:12px 16px">
+        <span style="font-family:var(--mono);font-size:9px;color:var(--accent)">✓ 421ms</span>
+        <span style="font-size:13px;font-weight:500">Brand Agent</span>
+        <span style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-left:auto">Gemini</span>
+      </div>
+      <div class="card" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-color:rgba(79,110,247,.4)">
+        <span style="font-family:var(--mono);font-size:9px;color:var(--accent)">● live</span>
+        <span style="font-size:13px;font-weight:500;color:var(--accent)">Copywriting Agent…</span>
+        <span style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-left:auto">Gemini</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     S10 · BRAND CONSISTENCY
+══════════════════════════════════════════════════════════ -->
+<section class="slide" id="s10" data-ts="1:30">
+  <div class="slide-label">1:30 — Brand Consistency</div>
+
+  <div style="display:flex;gap:56px;align-items:flex-start;width:100%;max-width:900px">
+    <div style="flex:1">
+      <div class="t-eyebrow">What makes this different</div>
+      <div class="t-headline" style="font-size:clamp(26px,3.2vw,44px)">
+        Every slide respects<br><span class="t-accent">your brand.</span>
+      </div>
+      <div class="rule"></div>
+      <div class="t-body">
+        Upload a reference image — maybe a past post that performed well — and the Design Agent adapts the entire visual system to match it.
+      </div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;gap:20px">
+      <div class="card">
+        <div class="mockup-label" style="margin-bottom:10px">Colour Palette</div>
+        <div class="swatch-row">
+          <div class="swatch" style="background:#0D0D0D"></div>
+          <div class="swatch" style="background:#4F6EF7"></div>
+          <div class="swatch" style="background:#FFFFFF"></div>
+          <div class="swatch" style="background:#9CA3AF"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="mockup-label" style="margin-bottom:8px">Typography</div>
+        <div style="font-size:20px;font-weight:700;color:var(--fg)">Inter — Bold</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:4px">Story-driven layout</div>
+      </div>
+      <div class="card">
+        <div class="mockup-label" style="margin-bottom:8px">Voice &amp; Tone</div>
+        <div style="font-size:13px;color:var(--fg);line-height:1.5">Authoritative yet accessible. Short, punchy sentences. Lead with personal insight.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     S11 · 3 TITLE VARIANTS
+══════════════════════════════════════════════════════════ -->
+<section class="slide" id="s11" data-ts="1:45">
+  <div class="slide-label">1:45 — Title Options</div>
+
+  <div style="display:flex;gap:52px;align-items:flex-start;width:100%;max-width:900px">
+    <div style="flex:1">
+      <div class="t-eyebrow">For every slide</div>
+      <div class="t-headline" style="font-size:clamp(26px,3.2vw,44px)">
+        3 title variants.<br>
+        <span class="t-accent">Pick the hook</span><br>
+        that stops the scroll.
+      </div>
+      <div class="rule"></div>
+      <div class="t-body">
+        Statement. Curiosity question. Personal hook. One click to swap — and it re-renders instantly.
+      </div>
+    </div>
+    <div style="flex:1">
+      <div class="mockup-label" style="margin-bottom:12px">Slide 1 — Title Options</div>
+      <div class="title-btn active">
+        <span class="tb-num">01</span>
+        Why most people fail at building habits — and what actually works
+      </div>
+      <div class="title-btn">
+        <span class="tb-num">02</span>
+        What everyone gets wrong about habit formation.
+      </div>
+      <div class="title-btn">
+        <span class="tb-num">03</span>
+        I changed my mind about this. Here's why.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     S12 · SALES FUNNEL / CTA
+══════════════════════════════════════════════════════════ -->
+<section class="slide" id="s12" data-ts="2:00">
+  <div class="slide-label">2:00 — Sales Funnel</div>
+
+  <div style="display:flex;gap:64px;align-items:center;width:100%;max-width:900px">
+    <div style="flex:1">
+      <div class="t-eyebrow">Built-in conversion logic</div>
+      <div class="t-headline" style="font-size:clamp(26px,3.2vw,44px)">
+        Every carousel ends with a<br><span class="t-accent">CTA that converts.</span>
+      </div>
+      <div class="rule"></div>
+      <div class="t-body">
+        The Copywriting Agent writes the final slide as a purpose-built call to action — driving follows, comments, and link clicks that move people through your funnel.
+      </div>
+    </div>
+    <div class="funnel" style="flex:.8">
+      <div class="funnel-step" style="width:100%;border-radius:8px 8px 0 0">
+        <div class="funnel-label">Slide 1</div>
+        <div class="funnel-name">Hook</div>
+        <div class="funnel-sub">Stops the scroll</div>
+      </div>
+      <div class="funnel-arrow-row">↓</div>
+      <div class="funnel-step" style="width:82%;border-top:none">
+        <div class="funnel-label">Slides 2–5</div>
+        <div class="funnel-name">Value</div>
+        <div class="funnel-sub">Builds authority</div>
+      </div>
+      <div class="funnel-arrow-row">↓</div>
+      <div class="funnel-step" style="width:64%;border-top:none;border-radius:0 0 8px 8px;background:rgba(79,110,247,.22);border-color:rgba(79,110,247,.5)">
+        <div class="funnel-label">Slide 6</div>
+        <div class="funnel-name" style="color:var(--accent)">CTA</div>
+        <div class="funnel-sub">Converts</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     S13 · THE RESULT
+══════════════════════════════════════════════════════════ -->
+<section class="slide" id="s13" data-ts="2:15">
+  <div class="slide-label">2:15 — The Result</div>
+
+  <div class="stat-row">
+    <div class="stat">
+      <div class="stat-num">1</div>
+      <div class="stat-lbl">Meeting</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" style="color:var(--muted)">→</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">6</div>
+      <div class="stat-lbl">Slides</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" style="color:var(--muted)">→</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">60<span style="font-size:.4em">s</span></div>
+      <div class="stat-lbl">Seconds</div>
+    </div>
+  </div>
+
+  <div class="rule center"></div>
+
+  <div class="t-body t-center" style="max-width:560px">
+    Brand-consistent. Hook-first. CTA-ready.<br>
+    <span class="t-bold t-white">From raw notes to published carousel — in one click.</span>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     S14 · END
+══════════════════════════════════════════════════════════ -->
+<section class="slide" id="s14" data-ts="2:28">
+  <div class="cover-logo" style="margin-bottom:24px">C</div>
+  <div class="cover-title" style="font-size:clamp(36px,4.5vw,60px)">CarouselFlow <span class="t-accent">AI</span></div>
+  <div class="cover-sub" style="margin-top:12px">
+    So your expertise finally reaches the people who need it.
+  </div>
+  <div class="rule center" style="margin:28px auto"></div>
+  <div style="font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.1em;text-align:center">
+    github.com/Liam-1995tw/carouselflow-ai
+  </div>
+  <div style="margin-top:32px;display:flex;gap:16px">
+    <div class="card" style="padding:12px 24px;font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:.1em">
+      DEMO MODE — NO API KEYS NEEDED
+    </div>
+  </div>
+</section>
+
+</div><!-- /deck -->
+
+<script>
+const slides = Array.from(document.querySelectorAll('.slide'))
+const total  = slides.length
+let current  = 0
+
+function go(dir) {
+  const next = Math.max(0, Math.min(total - 1, current + dir))
+  if (next === current) return
+  slides[current].classList.remove('active')
+  slides[current].classList.add('out')
+  setTimeout(() => slides[current - dir >= 0 ? current - dir : current].classList.remove('out'), 500)
+  current = next
+  slides[current].classList.add('active')
+  updateHUD()
+}
+
+// Simpler approach: just swap active class
+function go(dir) {
+  slides[current].classList.remove('active')
+  current = Math.max(0, Math.min(total - 1, current + dir))
+  slides[current].classList.add('active')
+  updateHUD()
+}
+
+function updateHUD() {
+  const ts = slides[current].dataset.ts
+  document.getElementById('hud-ts').textContent    = ts ? ts : ''
+  document.getElementById('hud-count').textContent = `${current + 1} / ${total}`
+  document.getElementById('progress').style.width  = `${((current + 1) / total) * 100}%`
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'ArrowDown') { e.preventDefault(); go(1) }
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                    { e.preventDefault(); go(-1) }
+})
+
+updateHUD()
+</script>
+</body>
+</html>
